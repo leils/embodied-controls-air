@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MediaPipe webcam signals</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>MediaPipe webcam signals</h1>
+      <p class="subtitle">
+        Live gesture + hand landmark readout. Signals are display-only.
+      </p>
+    </header>
+
+    <main>
+      <section class="viewer">
+        <div class="stage">
+          <video id="webcam" playsinline autoplay muted></video>
+          <canvas id="overlay"></canvas>
+        </div>
+        <div class="controls">
+          <button id="toggleCamera" type="button" disabled>Start camera</button>
+          <p id="status" class="status">Loading model…</p>
+        </div>
+      </section>
+
+      <aside class="signals">
+        <div class="signals-header">
+          <h2>Live feedback</h2>
+          <span id="fps" class="fps">FPS: —</span>
+        </div>
+        <div id="gestureFeedback" class="gesture-feedback">
+          <p class="feedback-empty">Waiting for camera…</p>
+        </div>
+        <details class="raw-signals">
+          <summary>Raw landmark dump</summary>
+          <pre id="signalDump" class="signal-dump">Waiting for camera…</pre>
+        </details>
+      </aside>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,163 @@
+:root {
+  --bg: #111;
+  --panel: #1a1a1a;
+  --text: #e8e8e8;
+  --muted: #9a9a9a;
+  --border: #333;
+  --accent: #4a9eff;
+  --danger: #c44;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.4;
+}
+
+header {
+  padding: 1rem 1.25rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+h2 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.subtitle {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+main {
+  display: grid;
+  gap: 1rem;
+  max-width: 640px;
+  padding: 1rem 1.25rem 1.5rem;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.75rem;
+}
+
+.row {
+  display: flex;
+  align-items: end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+button,
+select,
+input[type="range"] {
+  font: inherit;
+}
+
+button,
+select {
+  font-size: 0.85rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: #222;
+  color: var(--text);
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+button:disabled,
+select:disabled,
+input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.output-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  flex: 1;
+  min-width: 12rem;
+}
+
+select {
+  width: 100%;
+}
+
+.status {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.status.error {
+  color: var(--danger);
+}
+
+.hint {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.sliders {
+  display: grid;
+  gap: 1rem;
+}
+
+.slider {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.slider-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.slider-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+pre {
+  margin: 0;
+  padding: 0.65rem;
+  font-size: 0.8rem;
+  background: #0d0d0d;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  white-space: pre-wrap;
+}

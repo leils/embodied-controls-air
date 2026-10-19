@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MediaPipe controller</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>MediaPipe controller</h1>
+      <p class="subtitle">
+        Individual channels, or one slider driven by a two-hand pinch.
+      </p>
+    </header>
+
+    <main>
+      <section class="viewer">
+        <div class="stage">
+          <video id="webcam" playsinline autoplay muted></video>
+          <canvas id="overlay"></canvas>
+        </div>
+        <div class="controls">
+          <button id="toggleCamera" type="button" disabled>Start camera</button>
+          <p id="status" class="status">Loading model…</p>
+        </div>
+        <p id="readout" class="readout">Waiting for camera…</p>
+      </section>
+
+      <section class="outputs">
+        <div class="modes" role="group" aria-label="Mode">
+          <button type="button" class="mode-btn active" id="modeChannels" aria-pressed="true">
+            Individual channels
+          </button>
+          <button type="button" class="mode-btn" id="modePinch" aria-pressed="false">
+            Pinch
+          </button>
+        </div>
+
+        <div class="channels" id="channelPanel" aria-label="Channels">
+        <label class="strength">
+          Pinch clutch
+          <input id="pinchClutch" type="checkbox" />
+        </label>
+        <div class="channel" data-channel="1">
+          <label class="channel-check">
+            <input type="checkbox" tabindex="-1" />
+            Channel 1
+          </label>
+          <input type="range" min="0" max="127" value="0" tabindex="-1" />
+          <output>0</output>
+        </div>
+        <div class="channel" data-channel="2">
+          <label class="channel-check">
+            <input type="checkbox" tabindex="-1" />
+            Channel 2
+          </label>
+          <input type="range" min="0" max="127" value="0" tabindex="-1" />
+          <output>0</output>
+        </div>
+        <div class="channel" data-channel="3">
+          <label class="channel-check">
+            <input type="checkbox" tabindex="-1" />
+            Channel 3
+          </label>
+          <input type="range" min="0" max="127" value="0" tabindex="-1" />
+          <output>0</output>
+        </div>
+        <div class="channel" data-channel="4">
+          <label class="channel-check">
+            <input type="checkbox" tabindex="-1" />
+            Channel 4
+          </label>
+          <input type="range" min="0" max="127" value="0" tabindex="-1" />
+          <output>0</output>
+        </div>
+        </div>
+
+        <div class="channels" id="pinchPanel" hidden>
+          <label class="strength">
+            Two channels
+            <input id="pinchMulti" type="checkbox" checked />
+          </label>
+          <div id="pinchSingle" hidden>
+            <div class="channel" id="pinchRow">
+              <span class="channel-check">Value</span>
+              <input id="pinchSlider" type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output id="pinchValue">0</output>
+            </div>
+          </div>
+          <div id="pinchChannels">
+            <div class="channel" data-pinch-channel="1">
+              <label class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                Channel 1
+              </label>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+            <div class="channel" data-pinch-channel="2">
+              <label class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                Channel 2
+              </label>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+          </div>
+          <label class="strength">
+            Strength
+            <input id="pinchStrength" type="number" min="1" max="1000" step="1" value="250" />
+          </label>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

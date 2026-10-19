@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Web MIDI controller</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Web MIDI controller</h1>
+      <p class="subtitle">
+        Two sliders. Each sends Control Change 1 (modulation) on its own MIDI channel.
+      </p>
+    </header>
+
+    <main>
+      <section class="panel">
+        <div class="row">
+          <button id="connect" type="button">Connect MIDI</button>
+          <label class="output-label">
+            Output
+            <select id="output" disabled>
+              <option value="">No outputs</option>
+            </select>
+          </label>
+        </div>
+        <p id="status" class="status">Not connected</p>
+      </section>
+
+      <section class="panel sliders">
+        <label class="slider">
+          <span class="slider-title">Channel 1</span>
+          <span class="slider-meta">CC 1 · value <output id="value1">0</output></span>
+          <input id="slider1" type="range" min="0" max="127" value="0" disabled />
+        </label>
+        <label class="slider">
+          <span class="slider-title">Channel 2</span>
+          <span class="slider-meta">CC 1 · value <output id="value2">0</output></span>
+          <input id="slider2" type="range" min="0" max="127" value="0" disabled />
+        </label>
+      </section>
+
+      <section class="panel">
+        <h2>Last sent</h2>
+        <pre id="log">—</pre>
+      </section>
+
+      <section class="panel">
+        <h2>Incoming</h2>
+        <p class="hint">
+          Turn on the IAC Driver, choose it as the output, then move a slider. The same messages come back here.
+        </p>
+        <pre id="incoming">—</pre>
+      </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

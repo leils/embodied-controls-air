@@ -1,6 +1,6 @@
 # MediaPipe controller
 
-Webcam controller with two modes. MIDI is not sent yet. Each slider holds a 0–127 value a later MIDI step can read.
+Webcam controller with two modes. Channel names are editable. When a MIDI output is connected, each value change sends Control Change 1. Individual channels use MIDI channels 1–4. Pinch uses MIDI channels 5–6, so the two modes do not share outputs. Sent messages are listed in the MIDI log.
 
 ## Individual channels
 

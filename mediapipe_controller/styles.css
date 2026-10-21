@@ -200,6 +200,88 @@ button:disabled {
   pointer-events: none;
 }
 
+.channel-name {
+  width: 7.2rem;
+  pointer-events: auto;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 0.1rem 0.25rem;
+}
+
+.channel-name:hover,
+.channel-name:focus {
+  border-color: var(--border);
+  background: #111;
+  outline: none;
+}
+
+.midi-ch {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.midi {
+  display: grid;
+  gap: 0.55rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.midi-connect {
+  display: flex;
+  align-items: end;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.midi-output {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+  min-width: 10rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.midi-output select {
+  width: 100%;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: #222;
+  color: var(--text);
+}
+
+.midi-log summary {
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.midi-log summary:hover {
+  color: var(--text);
+}
+
+.midi-log pre {
+  margin: 0.5rem 0 0;
+  max-height: 9rem;
+  overflow: auto;
+  padding: 0.55rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  background: #0d0d0d;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  white-space: pre-wrap;
+}
+
 .strength {
   display: flex;
   align-items: center;

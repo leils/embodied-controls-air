@@ -17,6 +17,9 @@ const HOLD_FRAMES = 6;
 const VALUE_BLEND = 0.45;
 const PINCH_RATIO = 0.6;
 const FRAME_MARGIN = 0.1;
+const CC_NUMBER = 1;
+const PINCH_MIDI_START = 5;
+const MIDI_LOG_LIMIT = 40;
 
 const FINGERS = [
   { name: "index", tip: 8, pip: 6 },
@@ -42,9 +45,15 @@ const pinchStrengthInput = document.getElementById("pinchStrength");
 const pinchMultiInput = document.getElementById("pinchMulti");
 const pinchSingle = document.getElementById("pinchSingle");
 const pinchChannelsPanel = document.getElementById("pinchChannels");
+const pinchNameInput = document.getElementById("pinchName");
+const connectMidiBtn = document.getElementById("connectMidi");
+const midiOutputSelect = document.getElementById("midiOutput");
+const midiStatusEl = document.getElementById("midiStatus");
+const midiLogEl = document.getElementById("midiLog");
 
 const channels = [1, 2, 3, 4].map((number) => ({
   number,
+  midiChannel: number,
   selected: false,
   value: 0,
   row: document.querySelector(`[data-channel="${number}"]`),
@@ -62,9 +71,12 @@ let pinchValue = 0;
 let pinchGrab = null;
 let pinchSelectKey = "";
 let pinchSelectFrames = 0;
+let midiAccess = null;
+const midiLog = [];
 
 const pinchChannels = [1, 2].map((number) => ({
   number,
+  midiChannel: PINCH_MIDI_START + number - 1,
   selected: false,
   value: 0,
   row: document.querySelector(`[data-pinch-channel="${number}"]`),
@@ -73,6 +85,95 @@ const pinchChannels = [1, 2].map((number) => ({
 function setStatus(message, isError = false) {
   statusEl.textContent = message;
   statusEl.classList.toggle("error", isError);
+}
+
+function setMidiStatus(message, isError = false) {
+  midiStatusEl.textContent = message;
+  midiStatusEl.classList.toggle("error", isError);
+}
+
+function channelName(channel) {
+  const name = channel.row.querySelector(".channel-name")?.value.trim();
+  return name || `Channel ${channel.number}`;
+}
+
+function showMidiChannel(row, midiChannel) {
+  const label = document.createElement("span");
+  label.className = "midi-ch";
+  label.textContent = `MIDI ${midiChannel}`;
+  row.querySelector(".channel-check").append(label);
+}
+
+function selectedMidiOutput() {
+  const id = midiOutputSelect.value;
+  return id ? midiAccess?.outputs.get(id) ?? null : null;
+}
+
+function logMidi(name, channelNumber, value, message) {
+  const bytes = message.map((byte) => byte.toString(16).padStart(2, "0")).join(" ");
+  const time = new Date().toLocaleTimeString("en-GB", { hour12: false });
+  midiLog.unshift(`${time}  ${name}  ch ${channelNumber}  CC ${CC_NUMBER}  ${value}  ${bytes}`);
+  if (midiLog.length > MIDI_LOG_LIMIT) {
+    midiLog.length = MIDI_LOG_LIMIT;
+  }
+  midiLogEl.textContent = midiLog.join("\n");
+}
+
+function sendMidi(channel, name = channelName(channel)) {
+  const output = selectedMidiOutput();
+  if (!output) {
+    return;
+  }
+  const message = [0xb0 | (channel.midiChannel - 1), CC_NUMBER, channel.value];
+  output.send(message);
+  logMidi(name, channel.midiChannel, channel.value, message);
+}
+
+function refreshMidiOutputs() {
+  const previous = midiOutputSelect.value;
+  midiOutputSelect.replaceChildren();
+  const outputs = [...(midiAccess?.outputs.values() ?? [])];
+  if (outputs.length === 0) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "No outputs";
+    midiOutputSelect.append(option);
+    midiOutputSelect.disabled = true;
+    setMidiStatus("Connected, but no MIDI outputs are available");
+    return;
+  }
+  for (const output of outputs) {
+    const option = document.createElement("option");
+    option.value = output.id;
+    option.textContent = output.name || output.id;
+    midiOutputSelect.append(option);
+  }
+  const iac = outputs.find((output) => /IAC/i.test(output.name ?? ""));
+  if (outputs.some((output) => output.id === previous)) {
+    midiOutputSelect.value = previous;
+  } else if (iac) {
+    midiOutputSelect.value = iac.id;
+  }
+  midiOutputSelect.disabled = false;
+  setMidiStatus(`Sending to ${selectedMidiOutput()?.name ?? "output"}`);
+}
+
+async function connectMidi() {
+  connectMidiBtn.disabled = true;
+  try {
+    if (!navigator.requestMIDIAccess) {
+      throw new Error("Web MIDI is not available in this browser. Use Chrome or Edge.");
+    }
+    midiAccess = await navigator.requestMIDIAccess();
+    midiAccess.onstatechange = refreshMidiOutputs;
+    refreshMidiOutputs();
+    connectMidiBtn.textContent = "Reconnect";
+  } catch (err) {
+    console.error(err);
+    setMidiStatus(err.message ?? String(err), true);
+  } finally {
+    connectMidiBtn.disabled = false;
+  }
 }
 
 function renderChannel(channel) {
@@ -151,6 +252,7 @@ function setSelectedValue(raw) {
   }
   channel.value = value;
   renderChannel(channel);
+  sendMidi(channel);
 }
 
 function topCategory(categories) {
@@ -276,6 +378,11 @@ function applyPinch(hands) {
   if (pinch.active && pinch.value !== pinchValue) {
     pinchValue = pinch.value;
     renderPinch();
+    const name = pinchNameInput.value.trim() || "Pinch";
+    sendMidi(
+      { midiChannel: PINCH_MIDI_START, value: pinchValue, row: pinchNameInput.closest(".channel") },
+      name
+    );
   }
   return pinch;
 }
@@ -316,6 +423,7 @@ function applyPinchChannels(hands) {
   if (pinch.active && pinch.value !== selected.value) {
     selected.value = pinch.value;
     renderPinchChannel(selected);
+    sendMidi(selected);
   }
   return { ...pinch, left };
 }
@@ -494,8 +602,20 @@ async function toggleCamera() {
 }
 
 async function init() {
+  for (const channel of channels) {
+    showMidiChannel(channel.row, channel.midiChannel);
+  }
+  for (const channel of pinchChannels) {
+    showMidiChannel(channel.row, channel.midiChannel);
+  }
+  showMidiChannel(pinchNameInput.closest(".channel"), PINCH_MIDI_START);
   modeChannelsBtn.addEventListener("click", () => setMode("channels"));
   modePinchBtn.addEventListener("click", () => setMode("pinch"));
+  connectMidiBtn.addEventListener("click", connectMidi);
+  midiOutputSelect.addEventListener("change", () => {
+    const output = selectedMidiOutput();
+    setMidiStatus(output ? `Sending to ${output.name}` : "No output selected");
+  });
   try {
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error(

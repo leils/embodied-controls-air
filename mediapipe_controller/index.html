@@ -43,34 +43,34 @@
           <input id="pinchClutch" type="checkbox" />
         </label>
         <div class="channel" data-channel="1">
-          <label class="channel-check">
+          <div class="channel-check">
             <input type="checkbox" tabindex="-1" />
-            Channel 1
-          </label>
+            <input class="channel-name" type="text" value="Channel 1" aria-label="Channel 1 name" maxlength="24" />
+          </div>
           <input type="range" min="0" max="127" value="0" tabindex="-1" />
           <output>0</output>
         </div>
         <div class="channel" data-channel="2">
-          <label class="channel-check">
+          <div class="channel-check">
             <input type="checkbox" tabindex="-1" />
-            Channel 2
-          </label>
+            <input class="channel-name" type="text" value="Channel 2" aria-label="Channel 2 name" maxlength="24" />
+          </div>
           <input type="range" min="0" max="127" value="0" tabindex="-1" />
           <output>0</output>
         </div>
         <div class="channel" data-channel="3">
-          <label class="channel-check">
+          <div class="channel-check">
             <input type="checkbox" tabindex="-1" />
-            Channel 3
-          </label>
+            <input class="channel-name" type="text" value="Channel 3" aria-label="Channel 3 name" maxlength="24" />
+          </div>
           <input type="range" min="0" max="127" value="0" tabindex="-1" />
           <output>0</output>
         </div>
         <div class="channel" data-channel="4">
-          <label class="channel-check">
+          <div class="channel-check">
             <input type="checkbox" tabindex="-1" />
-            Channel 4
-          </label>
+            <input class="channel-name" type="text" value="Channel 4" aria-label="Channel 4 name" maxlength="24" />
+          </div>
           <input type="range" min="0" max="127" value="0" tabindex="-1" />
           <output>0</output>
         </div>
@@ -83,25 +83,27 @@
           </label>
           <div id="pinchSingle" hidden>
             <div class="channel" id="pinchRow">
-              <span class="channel-check">Value</span>
+              <div class="channel-check">
+                <input class="channel-name" id="pinchName" type="text" value="Pinch" aria-label="Pinch output name" maxlength="24" />
+              </div>
               <input id="pinchSlider" type="range" min="0" max="127" value="0" tabindex="-1" />
               <output id="pinchValue">0</output>
             </div>
           </div>
           <div id="pinchChannels">
             <div class="channel" data-pinch-channel="1">
-              <label class="channel-check">
+              <div class="channel-check">
                 <input type="checkbox" tabindex="-1" />
-                Channel 1
-              </label>
+                <input class="channel-name" type="text" value="Channel 1" aria-label="Pinch channel 1 name" maxlength="24" />
+              </div>
               <input type="range" min="0" max="127" value="0" tabindex="-1" />
               <output>0</output>
             </div>
             <div class="channel" data-pinch-channel="2">
-              <label class="channel-check">
+              <div class="channel-check">
                 <input type="checkbox" tabindex="-1" />
-                Channel 2
-              </label>
+                <input class="channel-name" type="text" value="Channel 2" aria-label="Pinch channel 2 name" maxlength="24" />
+              </div>
               <input type="range" min="0" max="127" value="0" tabindex="-1" />
               <output>0</output>
             </div>
@@ -110,6 +112,23 @@
             Strength
             <input id="pinchStrength" type="number" min="1" max="1000" step="1" value="250" />
           </label>
+        </div>
+
+        <div class="midi">
+          <div class="midi-connect">
+            <button id="connectMidi" type="button">Connect MIDI</button>
+            <label class="midi-output">
+              Output
+              <select id="midiOutput" disabled>
+                <option value="">No outputs</option>
+              </select>
+            </label>
+          </div>
+          <p id="midiStatus" class="status">MIDI not connected</p>
+          <details class="midi-log">
+            <summary>MIDI log</summary>
+            <pre id="midiLog">No messages yet.</pre>
+          </details>
         </div>
       </section>
     </main>

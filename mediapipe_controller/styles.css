@@ -307,6 +307,23 @@ button:disabled {
   height: 1rem;
 }
 
+.settings {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.25rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--border);
+}
+
+.settings h3 {
+  margin: 0 0 0.15rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 @media (max-width: 860px) {
   main {
     grid-template-columns: 1fr;

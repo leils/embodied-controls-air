@@ -14,7 +14,6 @@ const INDEX_MCP = 5;
 const INDEX_TIP = 8;
 const PINKY_MCP = 17;
 const HOLD_FRAMES = 6;
-const VALUE_BLEND = 0.45;
 const PINCH_RATIO = 0.6;
 const FRAME_MARGIN = 0.1;
 const CC_NUMBER = 1;
@@ -35,6 +34,10 @@ const toggleBtn = document.getElementById("toggleCamera");
 const statusEl = document.getElementById("status");
 const readoutEl = document.getElementById("readout");
 const pinchClutchInput = document.getElementById("pinchClutch");
+const channelStrengthInput = document.getElementById("channelStrength");
+const channelMinInput = document.getElementById("channelMin");
+const channelMaxInput = document.getElementById("channelMax");
+const channelDeadzoneInput = document.getElementById("channelDeadzone");
 const channelPanel = document.getElementById("channelPanel");
 const pinchPanel = document.getElementById("pinchPanel");
 const modeChannelsBtn = document.getElementById("modeChannels");
@@ -73,6 +76,8 @@ let pinchSelectKey = "";
 let pinchSelectFrames = 0;
 let midiAccess = null;
 const midiLog = [];
+/** Last right-index y while tracking relative height for individual channels. */
+let indexTrackY = null;
 
 const pinchChannels = [1, 2].map((number) => ({
   number,
@@ -176,20 +181,78 @@ async function connectMidi() {
   }
 }
 
+function channelRange() {
+  let min = Number(channelMinInput.value);
+  let max = Number(channelMaxInput.value);
+  if (!Number.isFinite(min)) {
+    min = 0;
+  }
+  if (!Number.isFinite(max)) {
+    max = 127;
+  }
+  min = Math.min(127, Math.max(0, Math.round(min)));
+  max = Math.min(127, Math.max(0, Math.round(max)));
+  if (min > max) {
+    [min, max] = [max, min];
+  }
+  return { min, max };
+}
+
+function channelStrength() {
+  const value = Number(channelStrengthInput.value);
+  if (!Number.isFinite(value)) {
+    return 1;
+  }
+  return Math.min(1000, Math.max(1, value));
+}
+
+function channelDeadzone() {
+  const value = Number(channelDeadzoneInput.value);
+  if (!Number.isFinite(value) || value < 0) {
+    return 0;
+  }
+  return Math.min(0.1, value);
+}
+
+function clampChannelValue(value) {
+  const { min, max } = channelRange();
+  return Math.min(max, Math.max(min, value));
+}
+
 function renderChannel(channel) {
+  const { min, max } = channelRange();
+  const range = channel.row.querySelector('input[type="range"]');
+  range.min = String(min);
+  range.max = String(max);
   channel.row.classList.toggle("selected", channel.selected);
   channel.row.querySelector('input[type="checkbox"]').checked = channel.selected;
-  channel.row.querySelector('input[type="range"]').value = String(channel.value);
+  range.value = String(channel.value);
   channel.row.querySelector("output").textContent = String(channel.value);
 }
 
+function applyChannelSettings() {
+  for (const channel of channels) {
+    const next = clampChannelValue(channel.value);
+    if (next !== channel.value) {
+      channel.value = next;
+      sendMidi(channel);
+    }
+    renderChannel(channel);
+  }
+}
+
 function selectChannel(number) {
+  let changed = false;
   for (const channel of channels) {
     const selected = channel.number === number;
     if (channel.selected !== selected) {
       channel.selected = selected;
+      changed = true;
       renderChannel(channel);
     }
+  }
+  if (changed) {
+    indexTrackY = null;
   }
 }
 
@@ -233,6 +296,7 @@ function setMode(next) {
   pinchGrab = null;
   pinchSelectKey = "";
   pinchSelectFrames = 0;
+  indexTrackY = null;
   channelPanel.hidden = mode !== "channels";
   pinchPanel.hidden = mode !== "pinch";
   modeChannelsBtn.classList.toggle("active", mode === "channels");
@@ -241,18 +305,36 @@ function setMode(next) {
   modePinchBtn.setAttribute("aria-pressed", String(mode === "pinch"));
 }
 
-function setSelectedValue(raw) {
+/**
+ * Adjust the selected channel from relative right-index motion.
+ * Raising the finger (y decreases) increases the value; lowering decreases it.
+ * Still fingers leave the value alone. Returns a short motion label for the readout.
+ */
+function adjustSelectedByIndexHeight(y) {
   const channel = channels.find((item) => item.selected);
   if (!channel) {
-    return;
+    indexTrackY = null;
+    return "hold";
   }
-  const value = Math.round(channel.value + (raw - channel.value) * VALUE_BLEND);
+  if (indexTrackY == null) {
+    indexTrackY = y;
+    return "ready";
+  }
+  const deltaUp = indexTrackY - y;
+  indexTrackY = y;
+  if (Math.abs(deltaUp) < channelDeadzone()) {
+    return "still";
+  }
+  const value = clampChannelValue(
+    Math.round(channel.value + deltaUp * channelStrength())
+  );
   if (value === channel.value) {
-    return;
+    return deltaUp > 0 ? "up" : "down";
   }
   channel.value = value;
   renderChannel(channel);
   sendMidi(channel);
+  return deltaUp > 0 ? "up" : "down";
 }
 
 function topCategory(categories) {
@@ -286,13 +368,6 @@ function isPinching(landmarks) {
   const gap = landmarkDistance(landmarks[THUMB_TIP], landmarks[INDEX_TIP]);
   const palm = landmarkDistance(landmarks[INDEX_MCP], landmarks[PINKY_MCP]);
   return palm > 0 && gap / palm < PINCH_RATIO;
-}
-
-function heightToValue(y) {
-  const span = 1 - FRAME_MARGIN * 2;
-  const t = (y - FRAME_MARGIN) / span;
-  const clamped = Math.min(1, Math.max(0, t));
-  return Math.round((1 - clamped) * 127);
 }
 
 function summarizeHand(index, results) {
@@ -457,7 +532,7 @@ function describePinch(hands, pinch) {
   readoutEl.textContent = `Pinch: both · span ${pinch.span.toFixed(2)} · ${pinchValue}`;
 }
 
-function describeHands(left, right) {
+function describeHands(left, right, motion) {
   const selected = channels.find((channel) => channel.selected);
   const leftText = !left
     ? "Left: —"
@@ -469,8 +544,10 @@ function describeHands(left, right) {
     ? "Right: —"
     : clutchOpen
       ? "Right: pinch to move"
-      : `Right index: ${heightToValue(right.landmarks[INDEX_TIP].y)}`;
-  const channelText = selected ? `Channel ${selected.number}` : "No channel";
+      : `Right index: ${motion}`;
+  const channelText = selected
+    ? `Channel ${selected.number} = ${selected.value}`
+    : "No channel";
   readoutEl.textContent = `${leftText} · ${rightText} · ${channelText}`;
 }
 
@@ -544,11 +621,14 @@ function predictLoop() {
   const { left, right } = assignHands(hands);
   applyLeftIntent(leftIntent(left));
   const clutchEngaged = !pinchClutchInput.checked || (right && isPinching(right.landmarks));
+  let motion = "—";
   if (right && clutchEngaged) {
-    setSelectedValue(heightToValue(right.landmarks[INDEX_TIP].y));
+    motion = adjustSelectedByIndexHeight(right.landmarks[INDEX_TIP].y);
+  } else {
+    indexTrackY = null;
   }
   drawHands(results, hands, false);
-  describeHands(left, right);
+  describeHands(left, right, motion);
 }
 
 async function startCamera() {
@@ -579,6 +659,7 @@ function stopCamera() {
   }
   video.srcObject = null;
   pinchGrab = null;
+  indexTrackY = null;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   readoutEl.textContent = "Camera stopped.";
   toggleBtn.textContent = "Start camera";
@@ -611,6 +692,14 @@ async function init() {
   showMidiChannel(pinchNameInput.closest(".channel"), PINCH_MIDI_START);
   modeChannelsBtn.addEventListener("click", () => setMode("channels"));
   modePinchBtn.addEventListener("click", () => setMode("pinch"));
+  for (const input of [
+    channelStrengthInput,
+    channelMinInput,
+    channelMaxInput,
+    channelDeadzoneInput,
+  ]) {
+    input.addEventListener("change", applyChannelSettings);
+  }
   connectMidiBtn.addEventListener("click", connectMidi);
   midiOutputSelect.addEventListener("change", () => {
     const output = selectedMidiOutput();

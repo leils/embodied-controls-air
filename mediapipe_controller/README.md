@@ -11,9 +11,17 @@ Hands are assigned by side of the mirrored preview. Your left hand appears on th
 | Left | 1, 2, 3, or 4 fingers up | Select that channel. The others clear. |
 | Left | Closed fist | Clear every channel. |
 | Left | Open palm, or hand leaves the frame | Keep the current selection. |
-| Right | Index fingertip height | Set the selected channel from 0 to 127 inside the on-screen box. The box sits 10% in from each edge of the video, so the ends are not the frame edges. |
+| Right | Index fingertip motion | Nudge the selected channel from its current value. Raise the finger to increase, lower to decrease, hold still to leave it alone. Absolute height is ignored, so selecting a channel does not jump the slider. |
 
-**Pinch clutch** is off by default. When it is on, the right index finger updates the slider only while that hand is pinching thumb to index. Releasing the pinch holds the value.
+**Settings** (below the channel rows):
+
+| Setting | Meaning |
+| --- | --- |
+| Strength | How many steps the value moves per 1.0 of frame height traveled |
+| Min / Max | Clamp for every channel (0–127) |
+| Deadzone | How much index motion is ignored before the value changes |
+
+**Pinch clutch** is off by default. When it is on, the right index finger updates the slider only while that hand is pinching thumb to index. Releasing the pinch holds the value and resets the motion baseline.
 
 Finger count uses the index, middle, ring, and pinky. The thumb is ignored. A pose must hold for a few frames before the selection changes. Slider values stay where they are when a channel is deselected.
 

@@ -74,6 +74,25 @@
           <input type="range" min="0" max="127" value="0" tabindex="-1" />
           <output>0</output>
         </div>
+        <div class="settings" aria-label="Individual channel settings">
+          <h3>Settings</h3>
+          <label class="strength">
+            Strength
+            <input id="channelStrength" type="number" min="1" max="1000" step="1" value="250" />
+          </label>
+          <label class="strength">
+            Min
+            <input id="channelMin" type="number" min="0" max="127" step="1" value="0" />
+          </label>
+          <label class="strength">
+            Max
+            <input id="channelMax" type="number" min="0" max="127" step="1" value="127" />
+          </label>
+          <label class="strength">
+            Deadzone
+            <input id="channelDeadzone" type="number" min="0" max="0.1" step="0.001" value="0.003" />
+          </label>
+        </div>
         </div>
 
         <div class="channels" id="pinchPanel" hidden>

@@ -76,22 +76,34 @@
         </div>
         <div class="settings" aria-label="Individual channel settings">
           <h3>Settings</h3>
-          <label class="strength">
-            Strength
-            <input id="channelStrength" type="number" min="1" max="1000" step="1" value="250" />
-          </label>
-          <label class="strength">
-            Min
-            <input id="channelMin" type="number" min="0" max="127" step="1" value="0" />
-          </label>
-          <label class="strength">
-            Max
-            <input id="channelMax" type="number" min="0" max="127" step="1" value="127" />
-          </label>
-          <label class="strength">
-            Deadzone
-            <input id="channelDeadzone" type="number" min="0" max="0.1" step="0.001" value="0.003" />
-          </label>
+          <div class="tip">
+            <label class="strength">
+              Strength
+              <input id="channelStrength" type="number" min="1" max="1000" step="1" value="250" aria-describedby="tip-channel-strength" />
+            </label>
+            <span class="hover-note" id="tip-channel-strength" role="tooltip">Range 1 to 1000. Default 250. How much the selected channel changes when your right index fingertip moves up or down in the camera. Up raises the channel, down lowers it. A higher number means the same fingertip travel changes the value more. The channel stops at Min and Max.</span>
+          </div>
+          <div class="tip">
+            <label class="strength">
+              Min
+              <input id="channelMin" type="number" min="0" max="127" step="1" value="0" aria-describedby="tip-channel-min" />
+            </label>
+            <span class="hover-note" id="tip-channel-min" role="tooltip">Range 0 to 127. Default 0. The lowest value any channel can hold. Moving your right index fingertip down will not push a channel below this. A channel already under it is raised to this number.</span>
+          </div>
+          <div class="tip">
+            <label class="strength">
+              Max
+              <input id="channelMax" type="number" min="0" max="127" step="1" value="127" aria-describedby="tip-channel-max" />
+            </label>
+            <span class="hover-note" id="tip-channel-max" role="tooltip">Range 0 to 127. Default 127. The highest value any channel can hold. Moving your right index fingertip up will not push a channel above this. A channel already over it is lowered to this number.</span>
+          </div>
+          <div class="tip">
+            <label class="strength">
+              Deadzone
+              <input id="channelDeadzone" type="number" min="0" max="0.1" step="0.001" value="0.003" aria-describedby="tip-channel-deadzone" />
+            </label>
+            <span class="hover-note" id="tip-channel-deadzone" role="tooltip">Range 0 to 0.1, as a fraction of the picture height. Default 0.003. If your right index fingertip moves less than this from one moment to the next, the channel stays put. Raise it when a still hand makes the value jitter. Lower it when small deliberate moves do nothing.</span>
+          </div>
         </div>
         </div>
 
@@ -127,10 +139,13 @@
               <output>0</output>
             </div>
           </div>
-          <label class="strength">
-            Strength
-            <input id="pinchStrength" type="number" min="1" max="1000" step="1" value="250" />
-          </label>
+          <div class="tip">
+            <label class="strength">
+              Strength
+              <input id="pinchStrength" type="number" min="1" max="1000" step="1" value="250" aria-describedby="tip-pinch-strength" />
+            </label>
+            <span class="hover-note" id="tip-pinch-strength" role="tooltip">Range 1 to 1000. Default 250. How much the channel changes when the gap between your two pinched index fingertips grows or shrinks. A wider gap raises the value, a narrower gap lowers it. A higher number means the same change in that gap moves the channel more. The value stays between 0 and 127.</span>
+          </div>
         </div>
 
         <div class="midi">

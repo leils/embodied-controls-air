@@ -324,6 +324,37 @@ button:disabled {
   letter-spacing: 0.04em;
 }
 
+.tip {
+  position: relative;
+}
+
+.hover-note {
+  position: absolute;
+  z-index: 4;
+  left: 0;
+  bottom: calc(100% + 0.35rem);
+  width: 100%;
+  margin: 0;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid #4a4a4a;
+  border-radius: 3px;
+  background: #2a2a2a;
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.35;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.tip:hover > .hover-note,
+.tip:focus-within > .hover-note {
+  visibility: visible;
+  opacity: 1;
+}
+
 @media (max-width: 860px) {
   main {
     grid-template-columns: 1fr;

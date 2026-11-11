@@ -2,6 +2,7 @@ import { createRecognizer, readHands, drawHands, clearOverlay } from "./vision.j
 import { mountMidi } from "./midi.js";
 import { mountChannels, updateChannels, reset as resetChannels } from "./channels.js";
 import { mountPinch, updatePinch, reset as resetPinch } from "./pinch.js";
+import { updateGestures, reset as resetGestures } from "./gestures.js";
 
 const video = document.getElementById("webcam");
 const toggleBtn = document.getElementById("toggleCamera");
@@ -9,8 +10,10 @@ const statusEl = document.getElementById("status");
 const readoutEl = document.getElementById("readout");
 const channelPanel = document.getElementById("channelPanel");
 const pinchPanel = document.getElementById("pinchPanel");
+const gesturePanel = document.getElementById("gesturePanel");
 const modeChannelsBtn = document.getElementById("modeChannels");
 const modePinchBtn = document.getElementById("modePinch");
+const modeGesturesBtn = document.getElementById("modeGestures");
 
 let recognizer = null;
 let cameraRunning = false;
@@ -28,12 +31,16 @@ function setMode(next) {
   mode = next;
   resetPinch();
   resetChannels();
+  resetGestures();
   channelPanel.hidden = mode !== "channels";
   pinchPanel.hidden = mode !== "pinch";
+  gesturePanel.hidden = mode !== "gestures";
   modeChannelsBtn.classList.toggle("active", mode === "channels");
   modePinchBtn.classList.toggle("active", mode === "pinch");
+  modeGesturesBtn.classList.toggle("active", mode === "gestures");
   modeChannelsBtn.setAttribute("aria-pressed", String(mode === "channels"));
   modePinchBtn.setAttribute("aria-pressed", String(mode === "pinch"));
+  modeGesturesBtn.setAttribute("aria-pressed", String(mode === "gestures"));
 }
 
 function predictLoop() {
@@ -50,6 +57,9 @@ function predictLoop() {
   if (mode === "pinch") {
     const pinch = updatePinch(hands);
     drawHands(results, hands, pinch);
+  } else if (mode === "gestures") {
+    updateGestures(hands);
+    drawHands(results, hands, null);
   } else {
     updateChannels(hands);
     drawHands(results, hands, null);
@@ -85,6 +95,7 @@ function stopCamera() {
   video.srcObject = null;
   resetPinch();
   resetChannels();
+  resetGestures();
   clearOverlay();
   readoutEl.textContent = "Camera stopped.";
   toggleBtn.textContent = "Start camera";
@@ -110,6 +121,7 @@ async function toggleCamera() {
 async function init() {
   modeChannelsBtn.addEventListener("click", () => setMode("channels"));
   modePinchBtn.addEventListener("click", () => setMode("pinch"));
+  modeGesturesBtn.addEventListener("click", () => setMode("gestures"));
   mountMidi();
   mountChannels();
   mountPinch();

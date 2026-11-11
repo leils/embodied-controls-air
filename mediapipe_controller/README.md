@@ -1,6 +1,6 @@
 # MediaPipe controller
 
-Webcam controller with two modes. Channel names are editable. When a MIDI output is connected, each value change sends Control Change 1. Individual channels use MIDI channels 1–4. Pinch uses MIDI channels 5–6, so the two modes do not share outputs. Sent messages are listed in the MIDI log.
+Webcam controller with three modes. Channel names are editable. When a MIDI output is connected, each value change sends Control Change 1. Individual channels use MIDI channels 1–4. Pinch uses MIDI channels 5–6, so the two modes do not share outputs. Sent messages are listed in the MIDI log. Gesture test does not send MIDI.
 
 ## Individual channels
 
@@ -38,6 +38,14 @@ The grab starts at the current value. Moving the index fingers farther apart rai
 | Left hand, 1 or 2 fingers up | Select that channel and stick to it. |
 | Both hands closed into fists | Clear the selected channel. Slider values stay put. |
 | Both hands pinching | Move the selected channel by the index-finger distance, using the same strength. |
+
+## Gesture test
+
+The panel keeps a log of completed gestures. The line under the video shows the live pose: both fists, both open, palms together, or need both hands.
+
+**Closed twice.** Both hands close into fists, both open, then both close into fists again. The second close has to finish within about 2 seconds of the first. Each step holds for a few frames. A hand leaving the frame starts the sequence over. Holding the second fist does not log again until both hands open.
+
+**Palms together.** Both palms flat against each other, like prayer or a clap that stays closed. It logs once, then waits until the hands separate.
 
 ## Run locally
 

@@ -10,7 +10,7 @@
     <header>
       <h1>MediaPipe controller</h1>
       <p class="subtitle">
-        Individual channels, or one slider driven by a two-hand pinch.
+        Individual channels, a two-hand pinch, or a gesture test.
       </p>
     </header>
 
@@ -34,6 +34,9 @@
           </button>
           <button type="button" class="mode-btn" id="modePinch" aria-pressed="false">
             Pinch
+          </button>
+          <button type="button" class="mode-btn" id="modeGestures" aria-pressed="false">
+            Gesture test
           </button>
         </div>
 
@@ -146,6 +149,11 @@
             </label>
             <span class="hover-note" id="tip-pinch-strength" role="tooltip">Range 1 to 1000. Default 250. How much the channel changes when the gap between your two pinched index fingertips grows or shrinks. A wider gap raises the value, a narrower gap lowers it. A higher number means the same change in that gap moves the channel more. The value stays between 0 and 127.</span>
           </div>
+        </div>
+
+        <div class="channels" id="gesturePanel" hidden>
+          <p class="gesture-note">Close both fists twice in a row, or hold your palms flat together.</p>
+          <pre id="gestureLog">No gestures yet.</pre>
         </div>
 
         <div class="midi">

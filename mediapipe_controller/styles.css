@@ -77,6 +77,107 @@ main {
   pointer-events: none;
 }
 
+#handIndicators {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  grid-template-columns: 1fr 1fr;
+}
+
+.stage.color-indicators #webcam,
+.stage.color-indicators #overlay {
+  visibility: hidden;
+}
+
+.stage.color-indicators #handIndicators {
+  display: grid;
+}
+
+.hand-indicator {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--indicator-absent, #5a5a5a);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  transition: box-shadow 120ms ease, background 120ms ease;
+}
+
+.hand-indicator + .hand-indicator {
+  border-left: 2px solid #111;
+}
+
+.finger-bar {
+  position: absolute;
+  top: 0.55rem;
+  left: 0.55rem;
+  right: 0.55rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.35rem;
+  height: 0.5rem;
+}
+
+/* Left panel: index through pinky still map to segments in code order, but index sits on the right. */
+#indicatorLeft .finger-bar {
+  direction: rtl;
+}
+
+.finger-seg {
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.4);
+  transition: background 80ms ease;
+}
+
+.hand-indicator.present .finger-seg.up {
+  background: var(--indicator-finger-up, #3dba6a);
+}
+
+.hand-indicator:not(.present) .finger-bar {
+  opacity: 0.45;
+}
+
+.hand-indicator.present:not(.pinching) {
+  background: var(--indicator-present, #3dba6a);
+}
+
+.hand-indicator.pinching {
+  background: var(--indicator-pinch, #e6c84a);
+  color: rgba(17, 17, 17, 0.8);
+  text-shadow: none;
+}
+
+.hand-indicator.thumbs-up {
+  box-shadow:
+    inset 0 0 0 10px var(--indicator-thumb-glow, #4a9eff),
+    0 0 28px 6px color-mix(in srgb, var(--indicator-thumb-glow, #4a9eff) 55%, transparent);
+}
+
+.strength input[type="color"] {
+  width: 3.2rem;
+  height: 2rem;
+  padding: 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: #0d0d0d;
+  cursor: pointer;
+}
+
+.strength input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.strength input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
 .controls {
   display: flex;
   align-items: center;

@@ -16,8 +16,28 @@
 
     <main>
       <section class="viewer">
-        <div class="stage">
+        <div class="stage" id="stage">
           <video id="webcam" playsinline autoplay muted></video>
+          <div id="handIndicators" class="color-indicators" hidden aria-hidden="true">
+            <div class="hand-indicator" id="indicatorLeft" data-side="left">
+              <div class="finger-bar" aria-hidden="true">
+                <span class="finger-seg"></span>
+                <span class="finger-seg"></span>
+                <span class="finger-seg"></span>
+                <span class="finger-seg"></span>
+              </div>
+              <span class="hand-label">Left</span>
+            </div>
+            <div class="hand-indicator" id="indicatorRight" data-side="right">
+              <div class="finger-bar" aria-hidden="true">
+                <span class="finger-seg"></span>
+                <span class="finger-seg"></span>
+                <span class="finger-seg"></span>
+                <span class="finger-seg"></span>
+              </div>
+              <span class="hand-label">Right</span>
+            </div>
+          </div>
           <canvas id="overlay"></canvas>
         </div>
         <div class="controls">
@@ -212,6 +232,37 @@
       </div>
 
       <div class="drawer-body">
+        <section class="settings" id="viewerSettings" aria-label="Viewer settings">
+          <h3>Viewer</h3>
+          <label class="strength">
+            Color indicators
+            <input id="colorIndicators" type="checkbox" />
+          </label>
+          <p class="gesture-note">
+            Hide the camera image and show left and right panels with four finger segments across the top (index through pinky). Pinch turns the panel yellow. A thumbs-up adds a glowing edge when not pinching.
+          </p>
+          <label class="strength">
+            Detected
+            <input id="indicatorPresentColor" type="color" value="#3dba6a" />
+          </label>
+          <label class="strength">
+            Not detected
+            <input id="indicatorAbsentColor" type="color" value="#5a5a5a" />
+          </label>
+          <label class="strength">
+            Finger up
+            <input id="indicatorFingerUpColor" type="color" value="#3dba6a" />
+          </label>
+          <label class="strength">
+            Pinch
+            <input id="indicatorPinchColor" type="color" value="#e6c84a" />
+          </label>
+          <label class="strength">
+            Thumbs-up edge
+            <input id="indicatorThumbGlowColor" type="color" value="#4a9eff" />
+          </label>
+        </section>
+
         <section class="settings" id="channelSettings" aria-label="Channel settings">
           <h3>Channels</h3>
           <p class="gesture-note">Shared by Individual channels and Bank channels.</p>

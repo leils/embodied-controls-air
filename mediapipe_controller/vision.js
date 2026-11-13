@@ -41,15 +41,22 @@ function topCategory(categories) {
   return categories?.[0] ?? null;
 }
 
-function countFingersUp(landmarks) {
+function isFingerUp(landmarks, finger) {
   const wrist = landmarks[0];
-  return FINGERS.filter((finger) => {
-    const tip = landmarks[finger.tip];
-    const pip = landmarks[finger.pip];
-    const tipDist = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
-    const pipDist = Math.hypot(pip.x - wrist.x, pip.y - wrist.y);
-    return tipDist > pipDist * 1.08;
-  }).length;
+  const tip = landmarks[finger.tip];
+  const pip = landmarks[finger.pip];
+  const tipDist = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
+  const pipDist = Math.hypot(pip.x - wrist.x, pip.y - wrist.y);
+  return tipDist > pipDist * 1.08;
+}
+
+/** Index, middle, ring, pinky — same order as channel finger counts (thumb ignored). */
+export function fingerFlags(landmarks) {
+  return FINGERS.map((finger) => isFingerUp(landmarks, finger));
+}
+
+function countFingersUp(landmarks) {
+  return fingerFlags(landmarks).filter(Boolean).length;
 }
 
 export function landmarkDistance(a, b) {

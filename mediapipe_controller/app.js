@@ -1,4 +1,13 @@
-import { createRecognizer, readHands, drawHands, clearOverlay } from "./vision.js";
+import {
+  createRecognizer,
+  readHands,
+  drawHands,
+  clearOverlay,
+  assignHands,
+  fingerFlags,
+  isPinching,
+  isThumbUp,
+} from "./vision.js";
 import { mountMidi } from "./midi.js";
 import { mountChannels, updateChannels, reset as resetChannels } from "./channels.js";
 import { mountBanks, updateBanks, reset as resetBanks } from "./banks.js";
@@ -19,6 +28,19 @@ const settingsDrawer = document.getElementById("settingsDrawer");
 const openSettingsBtn = document.getElementById("openSettings");
 const closeSettingsBtn = document.getElementById("closeSettings");
 const gestureTestInput = document.getElementById("gestureTest");
+const colorIndicatorsInput = document.getElementById("colorIndicators");
+const handIndicatorsEl = document.getElementById("handIndicators");
+const indicatorLeft = document.getElementById("indicatorLeft");
+const indicatorRight = document.getElementById("indicatorRight");
+const stageEl = document.getElementById("stage");
+const indicatorPresentColor = document.getElementById("indicatorPresentColor");
+const indicatorAbsentColor = document.getElementById("indicatorAbsentColor");
+const indicatorFingerUpColor = document.getElementById("indicatorFingerUpColor");
+const indicatorPinchColor = document.getElementById("indicatorPinchColor");
+const indicatorThumbGlowColor = document.getElementById("indicatorThumbGlowColor");
+
+const fingerSegsLeft = [...indicatorLeft.querySelectorAll(".finger-seg")];
+const fingerSegsRight = [...indicatorRight.querySelectorAll(".finger-seg")];
 
 let recognizer = null;
 let cameraRunning = false;
@@ -67,6 +89,64 @@ function setSettingsOpen(open) {
   openSettingsBtn.focus();
 }
 
+function setColorIndicators(on) {
+  stageEl.classList.toggle("color-indicators", on);
+  handIndicatorsEl.hidden = !on;
+  handIndicatorsEl.setAttribute("aria-hidden", String(!on));
+  if (on) {
+    if (!cameraRunning) {
+      setHandIndicatorState(null, null);
+    }
+    return;
+  }
+  setHandIndicatorState(null, null);
+  if (cameraRunning && recognizer) {
+    const { results, hands } = readHands(recognizer, video);
+    drawHands(results, hands, null);
+  }
+}
+
+function applyFingerSegs(segs, hand) {
+  const flags = hand ? fingerFlags(hand.landmarks) : [false, false, false, false];
+  segs.forEach((seg, index) => seg.classList.toggle("up", flags[index]));
+}
+
+function applyHandIndicator(el, segs, hand) {
+  const present = Boolean(hand);
+  const pinching = present && isPinching(hand.landmarks);
+  el.classList.toggle("present", present);
+  el.classList.toggle("pinching", pinching);
+  el.classList.toggle("thumbs-up", present && !pinching && isThumbUp(hand));
+  applyFingerSegs(segs, hand);
+}
+
+function setHandIndicatorState(left, right) {
+  applyHandIndicator(indicatorLeft, fingerSegsLeft, left);
+  applyHandIndicator(indicatorRight, fingerSegsRight, right);
+}
+
+function applyIndicatorColors() {
+  handIndicatorsEl.style.setProperty("--indicator-present", indicatorPresentColor.value);
+  handIndicatorsEl.style.setProperty("--indicator-absent", indicatorAbsentColor.value);
+  handIndicatorsEl.style.setProperty("--indicator-finger-up", indicatorFingerUpColor.value);
+  handIndicatorsEl.style.setProperty("--indicator-pinch", indicatorPinchColor.value);
+  handIndicatorsEl.style.setProperty("--indicator-thumb-glow", indicatorThumbGlowColor.value);
+}
+
+function updateHandIndicators(hands) {
+  const sides = assignHands(hands);
+  setHandIndicatorState(sides.left, sides.right);
+}
+
+function drawFrame(results, hands, pinch) {
+  if (colorIndicatorsInput.checked) {
+    updateHandIndicators(hands);
+    clearOverlay();
+    return;
+  }
+  drawHands(results, hands, pinch);
+}
+
 function predictLoop() {
   if (!cameraRunning) {
     return;
@@ -80,16 +160,16 @@ function predictLoop() {
   const { results, hands } = readHands(recognizer, video);
   if (gestureTestInput.checked) {
     updateGestures(hands);
-    drawHands(results, hands, null);
+    drawFrame(results, hands, null);
   } else if (mode === "pinch") {
     const pinch = updatePinch(hands);
-    drawHands(results, hands, pinch);
+    drawFrame(results, hands, pinch);
   } else if (mode === "banks") {
     updateBanks(hands);
-    drawHands(results, hands, null);
+    drawFrame(results, hands, null);
   } else {
     updateChannels(hands);
-    drawHands(results, hands, null);
+    drawFrame(results, hands, null);
   }
 }
 
@@ -122,6 +202,7 @@ function stopCamera() {
   video.srcObject = null;
   resetAll();
   clearOverlay();
+  setHandIndicatorState(null, null);
   readoutEl.textContent = "Camera stopped.";
   toggleBtn.textContent = "Start camera";
   setStatus("Camera stopped");
@@ -154,6 +235,18 @@ async function init() {
     }
   });
   gestureTestInput.addEventListener("change", () => setGestureTest(gestureTestInput.checked));
+  colorIndicatorsInput.addEventListener("change", () => setColorIndicators(colorIndicatorsInput.checked));
+  for (const input of [
+    indicatorPresentColor,
+    indicatorAbsentColor,
+    indicatorFingerUpColor,
+    indicatorPinchColor,
+    indicatorThumbGlowColor,
+  ]) {
+    input.addEventListener("input", applyIndicatorColors);
+  }
+  applyIndicatorColors();
+  setColorIndicators(false);
   mountMidi();
   mountChannels();
   mountBanks();

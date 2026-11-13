@@ -4,6 +4,8 @@ Webcam controller with three modes, picked from the **Mode** dropdown. Channel n
 
 **Settings** opens a panel from the right. It shows the settings for the current mode and the gesture tester. Press Escape or **Close** to dismiss it.
 
+**Color indicators** (in Settings → Viewer) hides the camera picture and shows two rectangles in the same viewer area. The left rectangle tracks your left hand, the right tracks your right hand. **Detected** and **Not detected** set the main fill when a hand is in frame or not. Along the top of each panel, four small segments show index through pinky (thumb ignored): **Finger up** colors a segment when that finger is raised. **Pinch** turns the whole panel yellow while thumb and index are pinched. **Thumbs-up edge** adds a glow when that hand shows a thumbs-up and is not pinching. The camera still runs in the background so recognition keeps working.
+
 ## Individual channels
 
 Hands are assigned by side of the mirrored preview. Your left hand appears on the left.

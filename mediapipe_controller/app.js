@@ -10,10 +10,13 @@ const statusEl = document.getElementById("status");
 const readoutEl = document.getElementById("readout");
 const channelPanel = document.getElementById("channelPanel");
 const pinchPanel = document.getElementById("pinchPanel");
-const gesturePanel = document.getElementById("gesturePanel");
-const modeChannelsBtn = document.getElementById("modeChannels");
-const modePinchBtn = document.getElementById("modePinch");
-const modeGesturesBtn = document.getElementById("modeGestures");
+const channelSettings = document.getElementById("channelSettings");
+const pinchSettings = document.getElementById("pinchSettings");
+const modeSelect = document.getElementById("modeSelect");
+const settingsDrawer = document.getElementById("settingsDrawer");
+const openSettingsBtn = document.getElementById("openSettings");
+const closeSettingsBtn = document.getElementById("closeSettings");
+const gestureTestInput = document.getElementById("gestureTest");
 
 let recognizer = null;
 let cameraRunning = false;
@@ -27,20 +30,37 @@ function setStatus(message, isError = false) {
   statusEl.classList.toggle("error", isError);
 }
 
-function setMode(next) {
-  mode = next;
+function resetAll() {
   resetPinch();
   resetChannels();
   resetGestures();
+}
+
+function setMode(next) {
+  mode = next;
+  resetAll();
   channelPanel.hidden = mode !== "channels";
   pinchPanel.hidden = mode !== "pinch";
-  gesturePanel.hidden = mode !== "gestures";
-  modeChannelsBtn.classList.toggle("active", mode === "channels");
-  modePinchBtn.classList.toggle("active", mode === "pinch");
-  modeGesturesBtn.classList.toggle("active", mode === "gestures");
-  modeChannelsBtn.setAttribute("aria-pressed", String(mode === "channels"));
-  modePinchBtn.setAttribute("aria-pressed", String(mode === "pinch"));
-  modeGesturesBtn.setAttribute("aria-pressed", String(mode === "gestures"));
+  channelSettings.hidden = mode !== "channels";
+  pinchSettings.hidden = mode !== "pinch";
+}
+
+function setGestureTest(on) {
+  gestureTestInput.checked = on;
+  resetAll();
+}
+
+function setSettingsOpen(open) {
+  settingsDrawer.classList.toggle("open", open);
+  openSettingsBtn.setAttribute("aria-expanded", String(open));
+  if (open) {
+    closeSettingsBtn.focus();
+    return;
+  }
+  if (gestureTestInput.checked) {
+    setGestureTest(false);
+  }
+  openSettingsBtn.focus();
 }
 
 function predictLoop() {
@@ -54,12 +74,12 @@ function predictLoop() {
   lastVideoTime = video.currentTime;
 
   const { results, hands } = readHands(recognizer, video);
-  if (mode === "pinch") {
-    const pinch = updatePinch(hands);
-    drawHands(results, hands, pinch);
-  } else if (mode === "gestures") {
+  if (gestureTestInput.checked) {
     updateGestures(hands);
     drawHands(results, hands, null);
+  } else if (mode === "pinch") {
+    const pinch = updatePinch(hands);
+    drawHands(results, hands, pinch);
   } else {
     updateChannels(hands);
     drawHands(results, hands, null);
@@ -93,9 +113,7 @@ function stopCamera() {
     stream = null;
   }
   video.srcObject = null;
-  resetPinch();
-  resetChannels();
-  resetGestures();
+  resetAll();
   clearOverlay();
   readoutEl.textContent = "Camera stopped.";
   toggleBtn.textContent = "Start camera";
@@ -119,9 +137,16 @@ async function toggleCamera() {
 }
 
 async function init() {
-  modeChannelsBtn.addEventListener("click", () => setMode("channels"));
-  modePinchBtn.addEventListener("click", () => setMode("pinch"));
-  modeGesturesBtn.addEventListener("click", () => setMode("gestures"));
+  modeSelect.addEventListener("change", () => setMode(modeSelect.value));
+  setMode(modeSelect.value);
+  openSettingsBtn.addEventListener("click", () => setSettingsOpen(true));
+  closeSettingsBtn.addEventListener("click", () => setSettingsOpen(false));
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && settingsDrawer.classList.contains("open")) {
+      setSettingsOpen(false);
+    }
+  });
+  gestureTestInput.addEventListener("change", () => setGestureTest(gestureTestInput.checked));
   mountMidi();
   mountChannels();
   mountPinch();

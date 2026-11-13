@@ -129,15 +129,38 @@ button:disabled {
   padding: 0.75rem;
 }
 
-.modes {
+.mode-bar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  align-items: end;
+  gap: 0.65rem;
 }
 
-.mode-btn.active {
+.mode-bar .field {
+  flex: 1;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.field select {
+  width: 100%;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: #222;
+  color: var(--text);
+}
+
+.field select:focus {
   border-color: var(--accent);
-  color: var(--accent);
+  outline: none;
 }
 
 .channels {
@@ -239,24 +262,8 @@ button:disabled {
 }
 
 .midi-output {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
   flex: 1;
   min-width: 10rem;
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-
-.midi-output select {
-  width: 100%;
-  font: inherit;
-  font-size: 0.85rem;
-  padding: 0.45rem 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  background: #222;
-  color: var(--text);
 }
 
 .midi-log summary {
@@ -314,11 +321,71 @@ button:disabled {
   height: 1rem;
 }
 
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  width: min(360px, 100vw);
+  height: 100vh;
+  height: 100dvh;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  box-shadow: -12px 0 30px rgba(0, 0, 0, 0.5);
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform 200ms ease, visibility 0s linear 200ms;
+}
+
+.drawer.open {
+  transform: none;
+  visibility: visible;
+  transition: transform 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer,
+  .drawer.open {
+    transition: none;
+  }
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-header h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.drawer-body {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+  padding: 0.75rem;
+  overflow-y: auto;
+}
+
 .settings {
   display: grid;
   gap: 0.45rem;
-  margin-top: 0.25rem;
-  padding-top: 0.65rem;
+}
+
+.settings[hidden] {
+  display: none;
+}
+
+.settings + .settings {
+  padding-top: 0.85rem;
   border-top: 1px solid var(--border);
 }
 
@@ -354,6 +421,11 @@ button:disabled {
   opacity: 0;
   pointer-events: none;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.drawer .hover-note {
+  top: calc(100% + 0.35rem);
+  bottom: auto;
 }
 
 .tip:hover > .hover-note,

@@ -1,4 +1,13 @@
-import { HOLD_FRAMES, INDEX_TIP, assignHands, isPinching } from "./vision.js";
+import {
+  HOLD_FRAMES,
+  INDEX_TIP,
+  assignHands,
+  createHoldCounter,
+  isClosedFist,
+  isOpenPalm,
+  isPinching,
+  isThumbGesture,
+} from "./vision.js";
 import { sendMidi, showMidiChannel } from "./midi.js";
 
 const readoutEl = document.getElementById("readout");
@@ -8,18 +17,8 @@ const channelMinInput = document.getElementById("channelMin");
 const channelMaxInput = document.getElementById("channelMax");
 const channelDeadzoneInput = document.getElementById("channelDeadzone");
 
-const channels = [1, 2, 3, 4].map((number) => ({
-  number,
-  midiChannel: number,
-  selected: false,
-  value: 0,
-  row: document.querySelector(`[data-channel="${number}"]`),
-}));
-
-let pendingKey = "";
-let pendingFrames = 0;
-/** Last right-index y while tracking relative height for individual channels. */
-let indexTrackY = null;
+/** Every channel list created through createChannelControl, so settings changes reach all of them. */
+const groups = [];
 
 function channelRange() {
   let min = Number(channelMinInput.value);
@@ -71,126 +70,214 @@ function renderChannel(channel) {
 }
 
 function applyChannelSettings() {
-  for (const channel of channels) {
-    const next = clampChannelValue(channel.value);
-    if (next !== channel.value) {
-      channel.value = next;
-      sendMidi(channel);
-    }
-    renderChannel(channel);
-  }
-}
-
-function selectChannel(number) {
-  let changed = false;
-  for (const channel of channels) {
-    const selected = channel.number === number;
-    if (channel.selected !== selected) {
-      channel.selected = selected;
-      changed = true;
+  for (const channels of groups) {
+    for (const channel of channels) {
+      const next = clampChannelValue(channel.value);
+      if (next !== channel.value) {
+        channel.value = next;
+        sendMidi(channel);
+      }
       renderChannel(channel);
     }
-  }
-  if (changed) {
-    indexTrackY = null;
   }
 }
 
 /**
- * Adjust the selected channel from relative right-index motion.
- * Raising the finger (y decreases) increases the value; lowering decreases it.
- * Still fingers leave the value alone. Returns a short motion label for the readout.
+ * Left-hand intent. A fist clears, 1..maxFingers fingers selects that number.
+ * An open palm holds: it reads as four fingers up, and would otherwise select
+ * the fourth item whenever both hands open.
  */
-function adjustSelectedByIndexHeight(y) {
-  const channel = channels.find((item) => item.selected);
-  if (!channel) {
-    indexTrackY = null;
-    return "hold";
-  }
-  if (indexTrackY == null) {
-    indexTrackY = y;
-    return "ready";
-  }
-  const deltaUp = indexTrackY - y;
-  indexTrackY = y;
-  if (Math.abs(deltaUp) < channelDeadzone()) {
-    return "still";
-  }
-  const value = clampChannelValue(Math.round(channel.value + deltaUp * channelStrength()));
-  if (value === channel.value) {
-    return deltaUp > 0 ? "up" : "down";
-  }
-  channel.value = value;
-  renderChannel(channel);
-  sendMidi(channel);
-  return deltaUp > 0 ? "up" : "down";
-}
-
-function leftIntent(hand) {
+export function leftIntent(hand, maxFingers) {
   if (!hand) {
     return { kind: "absent" };
   }
-  if (hand.gestureName === "Closed_Fist" && hand.gestureScore >= 0.5) {
+  if (isClosedFist(hand)) {
     return { kind: "deselect" };
   }
-  if (hand.fingersUp >= 1 && hand.fingersUp <= 4) {
-    return { kind: "select", channel: hand.fingersUp };
+  if (isOpenPalm(hand)) {
+    return { kind: "hold" };
+  }
+  if (hand.fingersUp >= 1 && hand.fingersUp <= maxFingers) {
+    return { kind: "select", number: hand.fingersUp };
   }
   return { kind: "hold" };
 }
 
-function applyLeftIntent(intent) {
-  if (intent.kind === "absent" || intent.kind === "hold") {
-    pendingKey = "";
-    pendingFrames = 0;
-    return;
+export function describeLeft(left) {
+  if (!left) {
+    return "Left: —";
   }
-  const key = intent.kind === "deselect" ? "none" : String(intent.channel);
-  pendingFrames = key === pendingKey ? pendingFrames + 1 : 1;
-  pendingKey = key;
-  if (pendingFrames === HOLD_FRAMES) {
-    selectChannel(intent.kind === "deselect" ? null : intent.channel);
+  if (isClosedFist(left)) {
+    return "Left: fist";
   }
+  if (isOpenPalm(left)) {
+    return "Left: open";
+  }
+  if (isThumbGesture(left)) {
+    return "Left: thumb";
+  }
+  return `Left: ${left.fingersUp} fingers`;
 }
 
-function describeHands(left, right, motion) {
-  const selected = channels.find((channel) => channel.selected);
-  const leftText = !left
-    ? "Left: —"
-    : left.gestureName === "Closed_Fist"
-      ? "Left: fist"
-      : `Left: ${left.fingersUp} fingers`;
-  const clutchOpen = pinchClutchInput.checked && right && !isPinching(right.landmarks);
-  const rightText = !right
-    ? "Right: —"
-    : clutchOpen
-      ? "Right: pinch to move"
-      : `Right index: ${motion}`;
-  const channelText = selected ? `Channel ${selected.number} = ${selected.value}` : "No channel";
-  readoutEl.textContent = `${leftText} · ${rightText} · ${channelText}`;
+export function describeRight(right, motion) {
+  if (!right) {
+    return "Right: —";
+  }
+  if (motion === "fist" || motion === "thumb") {
+    return `Right: ${motion}`;
+  }
+  if (pinchClutchInput.checked && !isPinching(right.landmarks)) {
+    return "Right: pinch to move";
+  }
+  return `Right index: ${motion}`;
 }
+
+export function describeChannel(channel) {
+  return channel ? `Channel ${channel.number} = ${channel.value}` : "No channel";
+}
+
+/**
+ * Selection and value control for one list of channels: the left hand picks
+ * a channel, right index motion nudges its value.
+ */
+export function createChannelControl(channels) {
+  groups.push(channels);
+  const hold = createHoldCounter();
+  /** Last right-index y while tracking relative height. */
+  let trackY = null;
+  /** Frames to skip after a right fist or thumb, so the fingers uncurling does not raise the value. */
+  let settleFrames = 0;
+  let frozenLabel = "fist";
+
+  function selected() {
+    return channels.find((channel) => channel.selected) ?? null;
+  }
+
+  function select(number) {
+    let changed = false;
+    for (const channel of channels) {
+      const isSelected = channel.number === number;
+      if (channel.selected !== isSelected) {
+        channel.selected = isSelected;
+        changed = true;
+        renderChannel(channel);
+      }
+    }
+    if (changed) {
+      trackY = null;
+    }
+  }
+
+  function applyLeft(left) {
+    const intent = leftIntent(left, channels.length);
+    if (intent.kind === "absent" || intent.kind === "hold") {
+      hold.reset();
+      return;
+    }
+    const key = intent.kind === "deselect" ? "none" : String(intent.number);
+    if (hold.step(key)) {
+      select(intent.kind === "deselect" ? null : intent.number);
+    }
+  }
+
+  /**
+   * Raising the finger (y decreases) increases the value; lowering decreases it.
+   * Still fingers leave the value alone. Returns a short motion label for the readout.
+   */
+  function adjustByIndexHeight(y) {
+    const channel = selected();
+    if (!channel) {
+      trackY = null;
+      return "hold";
+    }
+    if (trackY == null) {
+      trackY = y;
+      return "ready";
+    }
+    const deltaUp = trackY - y;
+    trackY = y;
+    if (Math.abs(deltaUp) < channelDeadzone()) {
+      return "still";
+    }
+    const value = clampChannelValue(Math.round(channel.value + deltaUp * channelStrength()));
+    if (value !== channel.value) {
+      channel.value = value;
+      renderChannel(channel);
+      sendMidi(channel);
+    }
+    return deltaUp > 0 ? "up" : "down";
+  }
+
+  function applyRight(right) {
+    if (!right) {
+      trackY = null;
+      return "—";
+    }
+    if (isClosedFist(right) || isThumbGesture(right)) {
+      trackY = null;
+      settleFrames = HOLD_FRAMES;
+      frozenLabel = isClosedFist(right) ? "fist" : "thumb";
+      return frozenLabel;
+    }
+    if (settleFrames > 0) {
+      settleFrames -= 1;
+      trackY = null;
+      return frozenLabel;
+    }
+    if (pinchClutchInput.checked && !isPinching(right.landmarks)) {
+      trackY = null;
+      return "—";
+    }
+    return adjustByIndexHeight(right.landmarks[INDEX_TIP].y);
+  }
+
+  /** Returns the right-hand motion label. */
+  function update(left, right) {
+    applyLeft(left);
+    return applyRight(right);
+  }
+
+  function reset() {
+    trackY = null;
+    settleFrames = 0;
+    hold.reset();
+  }
+
+  function mount() {
+    for (const channel of channels) {
+      showMidiChannel(channel.row, channel.midiChannel);
+      renderChannel(channel);
+      for (const input of channel.row.querySelectorAll("input")) {
+        input.addEventListener("click", (event) => event.preventDefault());
+        input.addEventListener("input", () => renderChannel(channel));
+      }
+    }
+  }
+
+  return { update, select, selected, reset, mount };
+}
+
+const individual = createChannelControl(
+  [1, 2, 3, 4].map((number) => ({
+    number,
+    midiChannel: number,
+    selected: false,
+    value: 0,
+    row: document.querySelector(`[data-channel="${number}"]`),
+  }))
+);
 
 export function reset() {
-  indexTrackY = null;
+  individual.reset();
 }
 
 export function updateChannels(hands) {
   const { left, right } = assignHands(hands);
-  applyLeftIntent(leftIntent(left));
-  const clutchEngaged = !pinchClutchInput.checked || (right && isPinching(right.landmarks));
-  let motion = "—";
-  if (right && clutchEngaged) {
-    motion = adjustSelectedByIndexHeight(right.landmarks[INDEX_TIP].y);
-  } else {
-    indexTrackY = null;
-  }
-  describeHands(left, right, motion);
+  const motion = individual.update(left, right);
+  readoutEl.textContent = `${describeLeft(left)} · ${describeRight(right, motion)} · ${describeChannel(individual.selected())}`;
 }
 
 export function mountChannels() {
-  for (const channel of channels) {
-    showMidiChannel(channel.row, channel.midiChannel);
-  }
   for (const input of [
     channelStrengthInput,
     channelMinInput,
@@ -199,11 +286,5 @@ export function mountChannels() {
   ]) {
     input.addEventListener("change", applyChannelSettings);
   }
-  for (const channel of channels) {
-    renderChannel(channel);
-    for (const input of channel.row.querySelectorAll("input")) {
-      input.addEventListener("click", (event) => event.preventDefault());
-      input.addEventListener("input", () => renderChannel(channel));
-    }
-  }
+  individual.mount();
 }

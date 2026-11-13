@@ -5,6 +5,7 @@
   --muted: #9a9a9a;
   --border: #333;
   --accent: #4a9eff;
+  --accent-muted: #7f9bbd;
   --danger: #c44;
 }
 
@@ -192,6 +193,75 @@ button:disabled {
 
 .channel.selected {
   border-color: var(--accent);
+}
+
+.bank {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.bank.active {
+  border-color: var(--accent);
+}
+
+.bank:not(.active):not(.choosing) .channel {
+  opacity: 0.55;
+}
+
+.bank.choosing {
+  border-color: var(--accent-muted);
+  background: rgba(127, 155, 189, 0.22);
+}
+
+.bank.choosing .channel {
+  border-color: rgba(127, 155, 189, 0.55);
+  background: rgba(127, 155, 189, 0.16);
+}
+
+.bank.choosing input[type="range"] {
+  accent-color: var(--accent-muted);
+}
+
+.bank.choosing .bank-header {
+  color: var(--accent-muted);
+}
+
+.bank.pending {
+  border-color: var(--accent);
+  border-style: dashed;
+  background: rgba(74, 158, 255, 0.2);
+}
+
+.bank.pending .channel {
+  border-color: rgba(74, 158, 255, 0.7);
+  background: rgba(74, 158, 255, 0.14);
+}
+
+.bank.pending input[type="range"] {
+  accent-color: var(--accent);
+}
+
+.bank-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.65rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bank.active:not(.choosing) .bank-header,
+.bank.pending .bank-header {
+  color: var(--accent);
+}
+
+.bank-status {
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .channel-check {

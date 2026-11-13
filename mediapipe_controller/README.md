@@ -1,6 +1,6 @@
 # MediaPipe controller
 
-Webcam controller with two modes, picked from the **Mode** dropdown. Channel names are editable. When a MIDI output is connected, each value change sends Control Change 1. Individual channels use MIDI channels 1–4. Pinch uses MIDI channels 5–6, so the two modes do not share outputs. Sent messages are listed in the MIDI log.
+Webcam controller with three modes, picked from the **Mode** dropdown. Channel names are editable. When a MIDI output is connected, each value change sends Control Change 1. Individual channels use MIDI channels 1–4, Pinch uses 5–6, and Bank channels use 9–16, so no two modes share outputs. Sent messages are listed in the MIDI log.
 
 **Settings** opens a panel from the right. It shows the settings for the current mode and the gesture tester. Press Escape or **Close** to dismiss it.
 
@@ -14,8 +14,9 @@ Hands are assigned by side of the mirrored preview. Your left hand appears on th
 | Left | Closed fist | Clear every channel. |
 | Left | Open palm, or hand leaves the frame | Keep the current selection. |
 | Right | Index fingertip motion | Nudge the selected channel from its current value. Raise the finger to increase, lower to decrease, hold still to leave it alone. Absolute height is ignored, so selecting a channel does not jump the slider. |
+| Right | Closed fist, thumbs up, or thumbs down | Freeze the value. Tracking resumes a few frames after the hand opens, so uncurling the fingers does not raise it. |
 
-**Settings** (in the Settings panel):
+**Settings** (in the Settings panel, shared with Bank channels):
 
 | Setting | Meaning |
 | --- | --- |
@@ -26,6 +27,14 @@ Hands are assigned by side of the mirrored preview. Your left hand appears on th
 **Pinch clutch** (in the Settings panel) is off by default. When it is on, the right index finger updates the slider only while that hand is pinching thumb to index. Releasing the pinch holds the value and resets the motion baseline.
 
 Finger count uses the index, middle, ring, and pinky. The thumb is ignored. A pose must hold for a few frames before the selection changes. Slider values stay where they are when a channel is deselected.
+
+## Bank channels
+
+Two banks of four channels. Bank 1 sends on MIDI 9–12, Bank 2 on MIDI 13–16. Both banks are shown. The active bank is outlined, and the other bank is dimmed.
+
+**Playing.** Works like Individual channels inside the active bank: left hand fingers pick channel 1–4, a left fist clears, right index motion moves the value. Strength, Min, Max, Deadzone, and Pinch clutch are the same settings Individual channels uses.
+
+**Choosing a bank.** Give a thumbs up with both hands at once to enter bank choice. The pose holds for a few frames, and holding it does not toggle again until either thumb drops. The selected channel clears, the right hand stops changing values, and both banks turn a muted blue while waiting for a choice. Raise 1 or 2 fingers on the left hand to pick a bank. The picked bank turns bright blue with a dashed outline. Both thumbs up again locks into it. Locking without picking keeps the current bank. After locking, no channel is selected and every value stays where it was.
 
 ## Pinch
 

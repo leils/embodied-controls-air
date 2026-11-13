@@ -1,6 +1,7 @@
 import { createRecognizer, readHands, drawHands, clearOverlay } from "./vision.js";
 import { mountMidi } from "./midi.js";
 import { mountChannels, updateChannels, reset as resetChannels } from "./channels.js";
+import { mountBanks, updateBanks, reset as resetBanks } from "./banks.js";
 import { mountPinch, updatePinch, reset as resetPinch } from "./pinch.js";
 import { updateGestures, reset as resetGestures } from "./gestures.js";
 
@@ -9,6 +10,7 @@ const toggleBtn = document.getElementById("toggleCamera");
 const statusEl = document.getElementById("status");
 const readoutEl = document.getElementById("readout");
 const channelPanel = document.getElementById("channelPanel");
+const bankPanel = document.getElementById("bankPanel");
 const pinchPanel = document.getElementById("pinchPanel");
 const channelSettings = document.getElementById("channelSettings");
 const pinchSettings = document.getElementById("pinchSettings");
@@ -33,6 +35,7 @@ function setStatus(message, isError = false) {
 function resetAll() {
   resetPinch();
   resetChannels();
+  resetBanks();
   resetGestures();
 }
 
@@ -40,8 +43,9 @@ function setMode(next) {
   mode = next;
   resetAll();
   channelPanel.hidden = mode !== "channels";
+  bankPanel.hidden = mode !== "banks";
   pinchPanel.hidden = mode !== "pinch";
-  channelSettings.hidden = mode !== "channels";
+  channelSettings.hidden = mode !== "channels" && mode !== "banks";
   pinchSettings.hidden = mode !== "pinch";
 }
 
@@ -80,6 +84,9 @@ function predictLoop() {
   } else if (mode === "pinch") {
     const pinch = updatePinch(hands);
     drawHands(results, hands, pinch);
+  } else if (mode === "banks") {
+    updateBanks(hands);
+    drawHands(results, hands, null);
   } else {
     updateChannels(hands);
     drawHands(results, hands, null);
@@ -149,6 +156,7 @@ async function init() {
   gestureTestInput.addEventListener("change", () => setGestureTest(gestureTestInput.checked));
   mountMidi();
   mountChannels();
+  mountBanks();
   mountPinch();
   try {
     if (!navigator.mediaDevices?.getUserMedia) {

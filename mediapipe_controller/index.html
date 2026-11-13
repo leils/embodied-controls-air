@@ -10,7 +10,7 @@
     <header>
       <h1>MediaPipe controller</h1>
       <p class="subtitle">
-        Individual channels or a two-hand pinch.
+        Individual channels, two banks of channels, or a two-hand pinch.
       </p>
     </header>
 
@@ -33,6 +33,7 @@
             Mode
             <select id="modeSelect">
               <option value="channels" selected>Individual channels</option>
+              <option value="banks">Bank channels</option>
               <option value="pinch">Pinch</option>
             </select>
           </label>
@@ -73,6 +74,85 @@
             </div>
             <input type="range" min="0" max="127" value="0" tabindex="-1" />
             <output>0</output>
+          </div>
+        </div>
+
+        <div class="channels" id="bankPanel" aria-label="Bank channels" hidden>
+          <div class="bank" data-bank="1">
+            <div class="bank-header">
+              <span>Bank 1</span>
+              <span class="bank-status"></span>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 1" aria-label="Bank 1 channel 1 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 2" aria-label="Bank 1 channel 2 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 3" aria-label="Bank 1 channel 3 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 4" aria-label="Bank 1 channel 4 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+          </div>
+          <div class="bank" data-bank="2">
+            <div class="bank-header">
+              <span>Bank 2</span>
+              <span class="bank-status"></span>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 1" aria-label="Bank 2 channel 1 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 2" aria-label="Bank 2 channel 2 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 3" aria-label="Bank 2 channel 3 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 4" aria-label="Bank 2 channel 4 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
           </div>
         </div>
 
@@ -132,8 +212,9 @@
       </div>
 
       <div class="drawer-body">
-        <section class="settings" id="channelSettings" aria-label="Individual channel settings">
-          <h3>Individual channels</h3>
+        <section class="settings" id="channelSettings" aria-label="Channel settings">
+          <h3>Channels</h3>
+          <p class="gesture-note">Shared by Individual channels and Bank channels.</p>
           <label class="strength">
             Pinch clutch
             <input id="pinchClutch" type="checkbox" />

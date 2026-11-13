@@ -1,8 +1,8 @@
-import { HOLD_FRAMES, assignHands, bothFists, isClosedFist, landmarkDistance } from "./vision.js";
+import { HOLD_FRAMES, assignHands, bothFists, bothOpen, isClosedFist, landmarkDistance } from "./vision.js";
+import { createDoubleClose } from "./doubleclose.js";
 
 const INDEX_MCP = 5;
 const PINKY_MCP = 17;
-const SEQUENCE_MS = 1000;
 const LOG_LIMIT = 40;
 const APART_FACTOR = 1.6;
 const THUMB_GESTURES = { Thumb_Up: "Thumbs up", Thumb_Down: "Thumbs down" };
@@ -12,9 +12,7 @@ const readoutEl = document.getElementById("readout");
 const gestureLogEl = document.getElementById("gestureLog");
 
 const log = [];
-let closePhase = "idle";
-let closeFrames = 0;
-let firstCloseAt = 0;
+const doubleClose = createDoubleClose();
 let palmFrames = 0;
 let palmsLatched = false;
 let thumbs = freshThumbs();
@@ -133,10 +131,6 @@ function palmsApart(hands) {
   return metrics.gap > metrics.span * APART_FACTOR;
 }
 
-function bothOpen(hands) {
-  return hands.length >= 2 && hands.every((hand) => !isClosedFist(hand));
-}
-
 function logGesture(name) {
   const time = new Date().toLocaleTimeString("en-GB", { hour12: false });
   log.unshift(`${time}  ${name}`);
@@ -147,48 +141,9 @@ function logGesture(name) {
 }
 
 function stepClose(hands, together, now) {
-  if (hands.length < 2) {
-    closePhase = "idle";
-    closeFrames = 0;
-    return;
-  }
-
-  if (closePhase === "latched") {
-    if (bothOpen(hands) && !together) {
-      closePhase = "idle";
-      closeFrames = 0;
-    }
-    return;
-  }
-
-  if (closePhase !== "idle" && now - firstCloseAt > SEQUENCE_MS) {
-    closePhase = "idle";
-    closeFrames = 0;
-  }
-
-  const waitingForFists = closePhase !== "fists";
-  const matched = waitingForFists ? bothFists(hands) : bothOpen(hands) && !together;
-  if (!matched) {
-    closeFrames = 0;
-    return;
-  }
-  closeFrames += 1;
-  if (closeFrames < HOLD_FRAMES) {
-    return;
-  }
-
-  closeFrames = 0;
-  if (closePhase === "fists") {
-    closePhase = "open";
-    return;
-  }
-  if (closePhase === "open" && now - firstCloseAt <= SEQUENCE_MS) {
+  if (doubleClose.step(hands, now, (open) => bothOpen(open) && !together)) {
     logGesture("Closed twice");
-    closePhase = "latched";
-    return;
   }
-  closePhase = "fists";
-  firstCloseAt = now;
 }
 
 function stepPalms(hands, together) {
@@ -269,9 +224,7 @@ function poseLabel(hands, together) {
 }
 
 export function reset() {
-  closePhase = "idle";
-  closeFrames = 0;
-  firstCloseAt = 0;
+  doubleClose.reset();
   palmFrames = 0;
   palmsLatched = false;
   thumbs = freshThumbs();

@@ -10,14 +10,34 @@
     <header>
       <h1>MediaPipe controller</h1>
       <p class="subtitle">
-        Individual channels, a two-hand pinch, or a gesture test.
+        Individual channels, two banks of channels, or a two-hand pinch.
       </p>
     </header>
 
     <main>
       <section class="viewer">
-        <div class="stage">
+        <div class="stage" id="stage">
           <video id="webcam" playsinline autoplay muted></video>
+          <div id="handIndicators" class="color-indicators" hidden aria-hidden="true">
+            <div class="hand-indicator" id="indicatorLeft" data-side="left">
+              <div class="finger-bar" aria-hidden="true">
+                <span class="finger-seg"></span>
+                <span class="finger-seg"></span>
+                <span class="finger-seg"></span>
+                <span class="finger-seg"></span>
+              </div>
+              <span class="hand-label">Left</span>
+            </div>
+            <div class="hand-indicator" id="indicatorRight" data-side="right">
+              <div class="finger-bar" aria-hidden="true">
+                <span class="finger-seg"></span>
+                <span class="finger-seg"></span>
+                <span class="finger-seg"></span>
+                <span class="finger-seg"></span>
+              </div>
+              <span class="hand-label">Right</span>
+            </div>
+          </div>
           <canvas id="overlay"></canvas>
         </div>
         <div class="controls">
@@ -28,57 +48,228 @@
       </section>
 
       <section class="outputs">
-        <div class="modes" role="group" aria-label="Mode">
-          <button type="button" class="mode-btn active" id="modeChannels" aria-pressed="true">
-            Individual channels
-          </button>
-          <button type="button" class="mode-btn" id="modePinch" aria-pressed="false">
-            Pinch
-          </button>
-          <button type="button" class="mode-btn" id="modeGestures" aria-pressed="false">
-            Gesture test
+        <div class="mode-bar">
+          <label class="field">
+            Mode
+            <select id="modeSelect">
+              <option value="channels">Individual channels</option>
+              <option value="banks" selected>Bank channels</option>
+              <option value="pinch">Pinch</option>
+            </select>
+          </label>
+          <button id="openSettings" type="button" aria-expanded="false" aria-controls="settingsDrawer">
+            Settings
           </button>
         </div>
 
         <div class="channels" id="channelPanel" aria-label="Channels">
-        <label class="strength">
-          Pinch clutch
-          <input id="pinchClutch" type="checkbox" />
-        </label>
-        <div class="channel" data-channel="1">
-          <div class="channel-check">
-            <input type="checkbox" tabindex="-1" />
-            <input class="channel-name" type="text" value="Channel 1" aria-label="Channel 1 name" maxlength="24" />
+          <div class="channel" data-channel="1">
+            <div class="channel-check">
+              <input type="checkbox" tabindex="-1" />
+              <input class="channel-name" type="text" value="Channel 1" aria-label="Channel 1 name" maxlength="24" />
+            </div>
+            <input type="range" min="0" max="127" value="0" tabindex="-1" />
+            <output>0</output>
           </div>
-          <input type="range" min="0" max="127" value="0" tabindex="-1" />
-          <output>0</output>
-        </div>
-        <div class="channel" data-channel="2">
-          <div class="channel-check">
-            <input type="checkbox" tabindex="-1" />
-            <input class="channel-name" type="text" value="Channel 2" aria-label="Channel 2 name" maxlength="24" />
+          <div class="channel" data-channel="2">
+            <div class="channel-check">
+              <input type="checkbox" tabindex="-1" />
+              <input class="channel-name" type="text" value="Channel 2" aria-label="Channel 2 name" maxlength="24" />
+            </div>
+            <input type="range" min="0" max="127" value="0" tabindex="-1" />
+            <output>0</output>
           </div>
-          <input type="range" min="0" max="127" value="0" tabindex="-1" />
-          <output>0</output>
-        </div>
-        <div class="channel" data-channel="3">
-          <div class="channel-check">
-            <input type="checkbox" tabindex="-1" />
-            <input class="channel-name" type="text" value="Channel 3" aria-label="Channel 3 name" maxlength="24" />
+          <div class="channel" data-channel="3">
+            <div class="channel-check">
+              <input type="checkbox" tabindex="-1" />
+              <input class="channel-name" type="text" value="Channel 3" aria-label="Channel 3 name" maxlength="24" />
+            </div>
+            <input type="range" min="0" max="127" value="0" tabindex="-1" />
+            <output>0</output>
           </div>
-          <input type="range" min="0" max="127" value="0" tabindex="-1" />
-          <output>0</output>
-        </div>
-        <div class="channel" data-channel="4">
-          <div class="channel-check">
-            <input type="checkbox" tabindex="-1" />
-            <input class="channel-name" type="text" value="Channel 4" aria-label="Channel 4 name" maxlength="24" />
+          <div class="channel" data-channel="4">
+            <div class="channel-check">
+              <input type="checkbox" tabindex="-1" />
+              <input class="channel-name" type="text" value="Channel 4" aria-label="Channel 4 name" maxlength="24" />
+            </div>
+            <input type="range" min="0" max="127" value="0" tabindex="-1" />
+            <output>0</output>
           </div>
-          <input type="range" min="0" max="127" value="0" tabindex="-1" />
-          <output>0</output>
         </div>
-        <div class="settings" aria-label="Individual channel settings">
-          <h3>Settings</h3>
+
+        <div class="channels" id="bankPanel" aria-label="Bank channels" hidden>
+          <div class="bank" data-bank="1">
+            <div class="bank-header">
+              <span>Bank 1</span>
+              <span class="bank-status"></span>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 1" aria-label="Bank 1 channel 1 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 2" aria-label="Bank 1 channel 2 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 3" aria-label="Bank 1 channel 3 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 4" aria-label="Bank 1 channel 4 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+          </div>
+          <div class="bank" data-bank="2">
+            <div class="bank-header">
+              <span>Bank 2</span>
+              <span class="bank-status"></span>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 1" aria-label="Bank 2 channel 1 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 2" aria-label="Bank 2 channel 2 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 3" aria-label="Bank 2 channel 3 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+            <div class="channel">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 4" aria-label="Bank 2 channel 4 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+          </div>
+        </div>
+
+        <div class="channels" id="pinchPanel" hidden>
+          <div id="pinchSingle" hidden>
+            <div class="channel" id="pinchRow">
+              <div class="channel-check">
+                <input class="channel-name" id="pinchName" type="text" value="Pinch" aria-label="Pinch output name" maxlength="24" />
+              </div>
+              <input id="pinchSlider" type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output id="pinchValue">0</output>
+            </div>
+          </div>
+          <div id="pinchChannels">
+            <div class="channel" data-pinch-channel="1">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 1" aria-label="Pinch channel 1 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+            <div class="channel" data-pinch-channel="2">
+              <div class="channel-check">
+                <input type="checkbox" tabindex="-1" />
+                <input class="channel-name" type="text" value="Channel 2" aria-label="Pinch channel 2 name" maxlength="24" />
+              </div>
+              <input type="range" min="0" max="127" value="0" tabindex="-1" />
+              <output>0</output>
+            </div>
+          </div>
+        </div>
+
+        <div class="midi">
+          <div class="midi-connect">
+            <button id="connectMidi" type="button">Connect MIDI</button>
+            <label class="field midi-output">
+              Output
+              <select id="midiOutput" disabled>
+                <option value="">No outputs</option>
+              </select>
+            </label>
+          </div>
+          <p id="midiStatus" class="status">MIDI not connected</p>
+          <details class="midi-log">
+            <summary>MIDI log</summary>
+            <pre id="midiLog">No messages yet.</pre>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <aside class="drawer" id="settingsDrawer" aria-label="Settings">
+      <div class="drawer-header">
+        <h2>Settings</h2>
+        <button id="closeSettings" type="button">Close</button>
+      </div>
+
+      <div class="drawer-body">
+        <section class="settings" id="viewerSettings" aria-label="Viewer settings">
+          <h3>Viewer</h3>
+          <label class="strength">
+            Color indicators
+            <input id="colorIndicators" type="checkbox" />
+          </label>
+          <p class="gesture-note">
+            Hide the camera image and show left and right panels with four finger segments across the top (index through pinky). Pinch turns the panel yellow. A thumbs-up adds a glowing edge when not pinching.
+          </p>
+          <label class="strength">
+            Detected
+            <input id="indicatorPresentColor" type="color" value="#3dba6a" />
+          </label>
+          <label class="strength">
+            Not detected
+            <input id="indicatorAbsentColor" type="color" value="#5a5a5a" />
+          </label>
+          <label class="strength">
+            Finger up
+            <input id="indicatorFingerUpColor" type="color" value="#3dba6a" />
+          </label>
+          <label class="strength">
+            Pinch
+            <input id="indicatorPinchColor" type="color" value="#e6c84a" />
+          </label>
+          <label class="strength">
+            Thumbs-up edge
+            <input id="indicatorThumbGlowColor" type="color" value="#4a9eff" />
+          </label>
+        </section>
+
+        <section class="settings" id="channelSettings" aria-label="Channel settings">
+          <h3>Channels</h3>
+          <p class="gesture-note">Shared by Individual channels and Bank channels.</p>
+          <label class="strength">
+            Pinch clutch
+            <input id="pinchClutch" type="checkbox" checked />
+          </label>
           <div class="tip">
             <label class="strength">
               Strength
@@ -107,41 +298,14 @@
             </label>
             <span class="hover-note" id="tip-channel-deadzone" role="tooltip">Range 0 to 0.1, as a fraction of the picture height. Default 0.003. If your right index fingertip moves less than this from one moment to the next, the channel stays put. Raise it when a still hand makes the value jitter. Lower it when small deliberate moves do nothing.</span>
           </div>
-        </div>
-        </div>
+        </section>
 
-        <div class="channels" id="pinchPanel" hidden>
+        <section class="settings" id="pinchSettings" aria-label="Pinch settings" hidden>
+          <h3>Pinch</h3>
           <label class="strength">
             Two channels
             <input id="pinchMulti" type="checkbox" checked />
           </label>
-          <div id="pinchSingle" hidden>
-            <div class="channel" id="pinchRow">
-              <div class="channel-check">
-                <input class="channel-name" id="pinchName" type="text" value="Pinch" aria-label="Pinch output name" maxlength="24" />
-              </div>
-              <input id="pinchSlider" type="range" min="0" max="127" value="0" tabindex="-1" />
-              <output id="pinchValue">0</output>
-            </div>
-          </div>
-          <div id="pinchChannels">
-            <div class="channel" data-pinch-channel="1">
-              <div class="channel-check">
-                <input type="checkbox" tabindex="-1" />
-                <input class="channel-name" type="text" value="Channel 1" aria-label="Pinch channel 1 name" maxlength="24" />
-              </div>
-              <input type="range" min="0" max="127" value="0" tabindex="-1" />
-              <output>0</output>
-            </div>
-            <div class="channel" data-pinch-channel="2">
-              <div class="channel-check">
-                <input type="checkbox" tabindex="-1" />
-                <input class="channel-name" type="text" value="Channel 2" aria-label="Pinch channel 2 name" maxlength="24" />
-              </div>
-              <input type="range" min="0" max="127" value="0" tabindex="-1" />
-              <output>0</output>
-            </div>
-          </div>
           <div class="tip">
             <label class="strength">
               Strength
@@ -149,31 +313,19 @@
             </label>
             <span class="hover-note" id="tip-pinch-strength" role="tooltip">Range 1 to 1000. Default 250. How much the channel changes when the gap between your two pinched index fingertips grows or shrinks. A wider gap raises the value, a narrower gap lowers it. A higher number means the same change in that gap moves the channel more. The value stays between 0 and 127.</span>
           </div>
-        </div>
+        </section>
 
-        <div class="channels" id="gesturePanel" hidden>
-          <p class="gesture-note">Close both fists twice in a row, or hold your palms flat together.</p>
+        <section class="settings" aria-label="Gesture tester">
+          <h3>Gesture tester</h3>
+          <label class="strength">
+            Run tester
+            <input id="gestureTest" type="checkbox" />
+          </label>
+          <p class="gesture-note">While it runs, hand input goes to the tester and no MIDI is sent. Close both fists, open, then close again within 1 second. Hold your palms flat together. Or give a thumbs up or thumbs down with either hand.</p>
           <pre id="gestureLog">No gestures yet.</pre>
-        </div>
-
-        <div class="midi">
-          <div class="midi-connect">
-            <button id="connectMidi" type="button">Connect MIDI</button>
-            <label class="midi-output">
-              Output
-              <select id="midiOutput" disabled>
-                <option value="">No outputs</option>
-              </select>
-            </label>
-          </div>
-          <p id="midiStatus" class="status">MIDI not connected</p>
-          <details class="midi-log">
-            <summary>MIDI log</summary>
-            <pre id="midiLog">No messages yet.</pre>
-          </details>
-        </div>
-      </section>
-    </main>
+        </section>
+      </div>
+    </aside>
 
     <script type="module" src="app.js"></script>
   </body>

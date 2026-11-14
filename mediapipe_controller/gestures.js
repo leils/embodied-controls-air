@@ -1,20 +1,28 @@
-import { HOLD_FRAMES, assignHands, bothFists, isClosedFist, landmarkDistance } from "./vision.js";
+import { HOLD_FRAMES, assignHands, bothFists, bothOpen, isClosedFist, landmarkDistance } from "./vision.js";
+import { createDoubleClose } from "./doubleclose.js";
 
 const INDEX_MCP = 5;
 const PINKY_MCP = 17;
-const SEQUENCE_MS = 2000;
 const LOG_LIMIT = 40;
 const APART_FACTOR = 1.6;
+const THUMB_GESTURES = { Thumb_Up: "Thumbs up", Thumb_Down: "Thumbs down" };
+const THUMB_SCORE = 0.5;
 
 const readoutEl = document.getElementById("readout");
 const gestureLogEl = document.getElementById("gestureLog");
 
 const log = [];
-let closePhase = "idle";
-let closeFrames = 0;
-let firstCloseAt = 0;
+const doubleClose = createDoubleClose();
 let palmFrames = 0;
 let palmsLatched = false;
+let thumbs = freshThumbs();
+
+function freshThumbs() {
+  return {
+    left: { name: null, frames: 0, latched: null },
+    right: { name: null, frames: 0, latched: null },
+  };
+}
 
 function subtract(a, b) {
   return { x: a.x - b.x, y: a.y - b.y, z: (a.z ?? 0) - (b.z ?? 0) };
@@ -123,10 +131,6 @@ function palmsApart(hands) {
   return metrics.gap > metrics.span * APART_FACTOR;
 }
 
-function bothOpen(hands) {
-  return hands.length >= 2 && hands.every((hand) => !isClosedFist(hand));
-}
-
 function logGesture(name) {
   const time = new Date().toLocaleTimeString("en-GB", { hour12: false });
   log.unshift(`${time}  ${name}`);
@@ -137,48 +141,9 @@ function logGesture(name) {
 }
 
 function stepClose(hands, together, now) {
-  if (hands.length < 2) {
-    closePhase = "idle";
-    closeFrames = 0;
-    return;
-  }
-
-  if (closePhase === "latched") {
-    if (bothOpen(hands) && !together) {
-      closePhase = "idle";
-      closeFrames = 0;
-    }
-    return;
-  }
-
-  if (closePhase !== "idle" && now - firstCloseAt > SEQUENCE_MS) {
-    closePhase = "idle";
-    closeFrames = 0;
-  }
-
-  const waitingForFists = closePhase !== "fists";
-  const matched = waitingForFists ? bothFists(hands) : bothOpen(hands) && !together;
-  if (!matched) {
-    closeFrames = 0;
-    return;
-  }
-  closeFrames += 1;
-  if (closeFrames < HOLD_FRAMES) {
-    return;
-  }
-
-  closeFrames = 0;
-  if (closePhase === "fists") {
-    closePhase = "open";
-    return;
-  }
-  if (closePhase === "open" && now - firstCloseAt <= SEQUENCE_MS) {
+  if (doubleClose.step(hands, now, (open) => bothOpen(open) && !together)) {
     logGesture("Closed twice");
-    closePhase = "latched";
-    return;
   }
-  closePhase = "fists";
-  firstCloseAt = now;
 }
 
 function stepPalms(hands, together) {
@@ -198,7 +163,51 @@ function stepPalms(hands, together) {
   }
 }
 
+function thumbGesture(hand) {
+  if (!hand || hand.gestureScore < THUMB_SCORE || !THUMB_GESTURES[hand.gestureName]) {
+    return null;
+  }
+  return hand.gestureName;
+}
+
+// The latch only changes after a pose (including "no thumb") holds for
+// HOLD_FRAMES, so a one-frame recognizer flicker does not log twice.
+function stepThumbs(hands) {
+  const sides = assignHands(hands);
+  for (const side of ["left", "right"]) {
+    const state = thumbs[side];
+    const name = thumbGesture(sides[side]);
+    if (name !== state.name) {
+      state.name = name;
+      state.frames = 0;
+    }
+    state.frames += 1;
+    if (state.frames < HOLD_FRAMES || state.latched === name) {
+      continue;
+    }
+    state.latched = name;
+    if (name) {
+      logGesture(`${THUMB_GESTURES[name]} (${side})`);
+    }
+  }
+}
+
+function sideLabel(hand) {
+  if (!hand) {
+    return "—";
+  }
+  const thumb = thumbGesture(hand);
+  if (thumb) {
+    return THUMB_GESTURES[thumb].toLowerCase();
+  }
+  return isClosedFist(hand) ? "fist" : "open";
+}
+
 function poseLabel(hands, together) {
+  const { left, right } = assignHands(hands);
+  if (thumbGesture(left) || thumbGesture(right)) {
+    return `Left: ${sideLabel(left)} · Right: ${sideLabel(right)}`;
+  }
   if (hands.length < 2) {
     return "need both hands";
   }
@@ -211,17 +220,14 @@ function poseLabel(hands, together) {
   if (bothOpen(hands)) {
     return "both open";
   }
-  const { left, right } = assignHands(hands);
-  const side = (hand) => (!hand ? "—" : isClosedFist(hand) ? "fist" : "open");
-  return `Left: ${side(left)} · Right: ${side(right)}`;
+  return `Left: ${sideLabel(left)} · Right: ${sideLabel(right)}`;
 }
 
 export function reset() {
-  closePhase = "idle";
-  closeFrames = 0;
-  firstCloseAt = 0;
+  doubleClose.reset();
   palmFrames = 0;
   palmsLatched = false;
+  thumbs = freshThumbs();
 }
 
 export function updateGestures(hands) {
@@ -229,5 +235,6 @@ export function updateGestures(hands) {
   const together = palmsTogether(hands);
   stepClose(hands, together, now);
   stepPalms(hands, together);
+  stepThumbs(hands);
   readoutEl.textContent = poseLabel(hands, together);
 }

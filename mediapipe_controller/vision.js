@@ -41,15 +41,22 @@ function topCategory(categories) {
   return categories?.[0] ?? null;
 }
 
-function countFingersUp(landmarks) {
+function isFingerUp(landmarks, finger) {
   const wrist = landmarks[0];
-  return FINGERS.filter((finger) => {
-    const tip = landmarks[finger.tip];
-    const pip = landmarks[finger.pip];
-    const tipDist = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
-    const pipDist = Math.hypot(pip.x - wrist.x, pip.y - wrist.y);
-    return tipDist > pipDist * 1.08;
-  }).length;
+  const tip = landmarks[finger.tip];
+  const pip = landmarks[finger.pip];
+  const tipDist = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
+  const pipDist = Math.hypot(pip.x - wrist.x, pip.y - wrist.y);
+  return tipDist > pipDist * 1.08;
+}
+
+/** Index, middle, ring, pinky — same order as channel finger counts (thumb ignored). */
+export function fingerFlags(landmarks) {
+  return FINGERS.map((finger) => isFingerUp(landmarks, finger));
+}
+
+function countFingersUp(landmarks) {
+  return fingerFlags(landmarks).filter(Boolean).length;
 }
 
 export function landmarkDistance(a, b) {
@@ -91,8 +98,75 @@ export function isClosedFist(hand) {
   return hand.gestureName === "Closed_Fist" && hand.gestureScore >= 0.5;
 }
 
+export function isOpenPalm(hand) {
+  return hand.gestureName === "Open_Palm" && hand.gestureScore >= 0.5;
+}
+
+export function isThumbUp(hand) {
+  return hand.gestureName === "Thumb_Up" && hand.gestureScore >= 0.5;
+}
+
+export function isThumbGesture(hand) {
+  return (hand.gestureName === "Thumb_Up" || hand.gestureName === "Thumb_Down") && hand.gestureScore >= 0.5;
+}
+
+export function bothThumbsUp(hands) {
+  return hands.length >= 2 && hands.every(isThumbUp);
+}
+
+/**
+ * Fires once when a pose has held for HOLD_FRAMES. Re-arms only after the pose
+ * has been gone for HOLD_FRAMES, so a recognizer flicker while holding does not
+ * fire again.
+ */
+export function createPoseTrigger(matches) {
+  let frames = 0;
+  let latched = false;
+  return {
+    step(hands) {
+      const on = matches(hands);
+      if (on === latched) {
+        frames = 0;
+        return false;
+      }
+      frames += 1;
+      if (frames < HOLD_FRAMES) {
+        return false;
+      }
+      frames = 0;
+      latched = on;
+      return on;
+    },
+    reset() {
+      frames = 0;
+      latched = false;
+    },
+  };
+}
+
 export function bothFists(hands) {
   return hands.length >= 2 && hands.every(isClosedFist);
+}
+
+export function bothOpen(hands) {
+  return hands.length >= 2 && hands.every((hand) => !isClosedFist(hand));
+}
+
+/** Reports true once, on the frame a key has been stepped HOLD_FRAMES times in a row. */
+export function createHoldCounter() {
+  let key = "";
+  let frames = 0;
+  return {
+    step(next) {
+      frames = next === key ? frames + 1 : 1;
+      key = next;
+      return frames === HOLD_FRAMES;
+    },
+    reset() {
+      key = "";
+      frames = 0;
+    },
+  };
 }
 
 export function readHands(recognizer, videoEl) {

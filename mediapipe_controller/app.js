@@ -1,6 +1,16 @@
-import { createRecognizer, readHands, drawHands, clearOverlay } from "./vision.js";
+import {
+  createRecognizer,
+  readHands,
+  drawHands,
+  clearOverlay,
+  assignHands,
+  fingerFlags,
+  isPinching,
+  isThumbUp,
+} from "./vision.js";
 import { mountMidi } from "./midi.js";
 import { mountChannels, updateChannels, reset as resetChannels } from "./channels.js";
+import { mountBanks, updateBanks, reset as resetBanks } from "./banks.js";
 import { mountPinch, updatePinch, reset as resetPinch } from "./pinch.js";
 import { updateGestures, reset as resetGestures } from "./gestures.js";
 
@@ -9,11 +19,28 @@ const toggleBtn = document.getElementById("toggleCamera");
 const statusEl = document.getElementById("status");
 const readoutEl = document.getElementById("readout");
 const channelPanel = document.getElementById("channelPanel");
+const bankPanel = document.getElementById("bankPanel");
 const pinchPanel = document.getElementById("pinchPanel");
-const gesturePanel = document.getElementById("gesturePanel");
-const modeChannelsBtn = document.getElementById("modeChannels");
-const modePinchBtn = document.getElementById("modePinch");
-const modeGesturesBtn = document.getElementById("modeGestures");
+const channelSettings = document.getElementById("channelSettings");
+const pinchSettings = document.getElementById("pinchSettings");
+const modeSelect = document.getElementById("modeSelect");
+const settingsDrawer = document.getElementById("settingsDrawer");
+const openSettingsBtn = document.getElementById("openSettings");
+const closeSettingsBtn = document.getElementById("closeSettings");
+const gestureTestInput = document.getElementById("gestureTest");
+const colorIndicatorsInput = document.getElementById("colorIndicators");
+const handIndicatorsEl = document.getElementById("handIndicators");
+const indicatorLeft = document.getElementById("indicatorLeft");
+const indicatorRight = document.getElementById("indicatorRight");
+const stageEl = document.getElementById("stage");
+const indicatorPresentColor = document.getElementById("indicatorPresentColor");
+const indicatorAbsentColor = document.getElementById("indicatorAbsentColor");
+const indicatorFingerUpColor = document.getElementById("indicatorFingerUpColor");
+const indicatorPinchColor = document.getElementById("indicatorPinchColor");
+const indicatorThumbGlowColor = document.getElementById("indicatorThumbGlowColor");
+
+const fingerSegsLeft = [...indicatorLeft.querySelectorAll(".finger-seg")];
+const fingerSegsRight = [...indicatorRight.querySelectorAll(".finger-seg")];
 
 let recognizer = null;
 let cameraRunning = false;
@@ -27,20 +54,97 @@ function setStatus(message, isError = false) {
   statusEl.classList.toggle("error", isError);
 }
 
-function setMode(next) {
-  mode = next;
+function resetAll() {
   resetPinch();
   resetChannels();
+  resetBanks();
   resetGestures();
+}
+
+function setMode(next) {
+  mode = next;
+  resetAll();
   channelPanel.hidden = mode !== "channels";
+  bankPanel.hidden = mode !== "banks";
   pinchPanel.hidden = mode !== "pinch";
-  gesturePanel.hidden = mode !== "gestures";
-  modeChannelsBtn.classList.toggle("active", mode === "channels");
-  modePinchBtn.classList.toggle("active", mode === "pinch");
-  modeGesturesBtn.classList.toggle("active", mode === "gestures");
-  modeChannelsBtn.setAttribute("aria-pressed", String(mode === "channels"));
-  modePinchBtn.setAttribute("aria-pressed", String(mode === "pinch"));
-  modeGesturesBtn.setAttribute("aria-pressed", String(mode === "gestures"));
+  channelSettings.hidden = mode !== "channels" && mode !== "banks";
+  pinchSettings.hidden = mode !== "pinch";
+}
+
+function setGestureTest(on) {
+  gestureTestInput.checked = on;
+  resetAll();
+}
+
+function setSettingsOpen(open) {
+  settingsDrawer.classList.toggle("open", open);
+  openSettingsBtn.setAttribute("aria-expanded", String(open));
+  if (open) {
+    closeSettingsBtn.focus();
+    return;
+  }
+  if (gestureTestInput.checked) {
+    setGestureTest(false);
+  }
+  openSettingsBtn.focus();
+}
+
+function setColorIndicators(on) {
+  stageEl.classList.toggle("color-indicators", on);
+  handIndicatorsEl.hidden = !on;
+  handIndicatorsEl.setAttribute("aria-hidden", String(!on));
+  if (on) {
+    if (!cameraRunning) {
+      setHandIndicatorState(null, null);
+    }
+    return;
+  }
+  setHandIndicatorState(null, null);
+  if (cameraRunning && recognizer) {
+    const { results, hands } = readHands(recognizer, video);
+    drawHands(results, hands, null);
+  }
+}
+
+function applyFingerSegs(segs, hand) {
+  const flags = hand ? fingerFlags(hand.landmarks) : [false, false, false, false];
+  segs.forEach((seg, index) => seg.classList.toggle("up", flags[index]));
+}
+
+function applyHandIndicator(el, segs, hand) {
+  const present = Boolean(hand);
+  const pinching = present && isPinching(hand.landmarks);
+  el.classList.toggle("present", present);
+  el.classList.toggle("pinching", pinching);
+  el.classList.toggle("thumbs-up", present && !pinching && isThumbUp(hand));
+  applyFingerSegs(segs, hand);
+}
+
+function setHandIndicatorState(left, right) {
+  applyHandIndicator(indicatorLeft, fingerSegsLeft, left);
+  applyHandIndicator(indicatorRight, fingerSegsRight, right);
+}
+
+function applyIndicatorColors() {
+  handIndicatorsEl.style.setProperty("--indicator-present", indicatorPresentColor.value);
+  handIndicatorsEl.style.setProperty("--indicator-absent", indicatorAbsentColor.value);
+  handIndicatorsEl.style.setProperty("--indicator-finger-up", indicatorFingerUpColor.value);
+  handIndicatorsEl.style.setProperty("--indicator-pinch", indicatorPinchColor.value);
+  handIndicatorsEl.style.setProperty("--indicator-thumb-glow", indicatorThumbGlowColor.value);
+}
+
+function updateHandIndicators(hands) {
+  const sides = assignHands(hands);
+  setHandIndicatorState(sides.left, sides.right);
+}
+
+function drawFrame(results, hands, pinch) {
+  if (colorIndicatorsInput.checked) {
+    updateHandIndicators(hands);
+    clearOverlay();
+    return;
+  }
+  drawHands(results, hands, pinch);
 }
 
 function predictLoop() {
@@ -54,15 +158,18 @@ function predictLoop() {
   lastVideoTime = video.currentTime;
 
   const { results, hands } = readHands(recognizer, video);
-  if (mode === "pinch") {
-    const pinch = updatePinch(hands);
-    drawHands(results, hands, pinch);
-  } else if (mode === "gestures") {
+  if (gestureTestInput.checked) {
     updateGestures(hands);
-    drawHands(results, hands, null);
+    drawFrame(results, hands, null);
+  } else if (mode === "pinch") {
+    const pinch = updatePinch(hands);
+    drawFrame(results, hands, pinch);
+  } else if (mode === "banks") {
+    updateBanks(hands);
+    drawFrame(results, hands, null);
   } else {
     updateChannels(hands);
-    drawHands(results, hands, null);
+    drawFrame(results, hands, null);
   }
 }
 
@@ -93,10 +200,9 @@ function stopCamera() {
     stream = null;
   }
   video.srcObject = null;
-  resetPinch();
-  resetChannels();
-  resetGestures();
+  resetAll();
   clearOverlay();
+  setHandIndicatorState(null, null);
   readoutEl.textContent = "Camera stopped.";
   toggleBtn.textContent = "Start camera";
   setStatus("Camera stopped");
@@ -119,11 +225,31 @@ async function toggleCamera() {
 }
 
 async function init() {
-  modeChannelsBtn.addEventListener("click", () => setMode("channels"));
-  modePinchBtn.addEventListener("click", () => setMode("pinch"));
-  modeGesturesBtn.addEventListener("click", () => setMode("gestures"));
+  modeSelect.addEventListener("change", () => setMode(modeSelect.value));
+  setMode(modeSelect.value);
+  openSettingsBtn.addEventListener("click", () => setSettingsOpen(true));
+  closeSettingsBtn.addEventListener("click", () => setSettingsOpen(false));
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && settingsDrawer.classList.contains("open")) {
+      setSettingsOpen(false);
+    }
+  });
+  gestureTestInput.addEventListener("change", () => setGestureTest(gestureTestInput.checked));
+  colorIndicatorsInput.addEventListener("change", () => setColorIndicators(colorIndicatorsInput.checked));
+  for (const input of [
+    indicatorPresentColor,
+    indicatorAbsentColor,
+    indicatorFingerUpColor,
+    indicatorPinchColor,
+    indicatorThumbGlowColor,
+  ]) {
+    input.addEventListener("input", applyIndicatorColors);
+  }
+  applyIndicatorColors();
+  setColorIndicators(false);
   mountMidi();
   mountChannels();
+  mountBanks();
   mountPinch();
   try {
     if (!navigator.mediaDevices?.getUserMedia) {

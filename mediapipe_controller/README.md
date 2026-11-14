@@ -1,6 +1,6 @@
 # MediaPipe controller
 
-Webcam controller with three modes, picked from the **Mode** dropdown. Channel names are editable. When a MIDI output is connected, each value change sends Control Change 1. Individual channels use MIDI channels 1–4, Pinch uses 5–6, and Bank channels use 9–16, so no two modes share outputs. Sent messages are listed in the MIDI log.
+Webcam controller with three modes, picked from the **Mode** dropdown (default **Bank channels**). Channel names are editable. When a MIDI output is connected, each value change sends Control Change 1. Individual channels use MIDI channels 1–4, Pinch uses 5–6, and Bank channels use 9–16, so no two modes share outputs. Sent messages are listed in the MIDI log.
 
 **Settings** opens a panel from the right. It shows the settings for the current mode and the gesture tester. Press Escape or **Close** to dismiss it.
 
@@ -26,7 +26,7 @@ Hands are assigned by side of the mirrored preview. Your left hand appears on th
 | Min / Max | Clamp for every channel (0–127) |
 | Deadzone | How much index motion is ignored before the value changes |
 
-**Pinch clutch** (in the Settings panel) is off by default. When it is on, the right index finger updates the slider only while that hand is pinching thumb to index. Releasing the pinch holds the value and resets the motion baseline.
+**Pinch clutch** (in the Settings panel) is on by default. When it is on, the right index finger updates the slider only while that hand is pinching thumb to index. Releasing the pinch holds the value and resets the motion baseline.
 
 Finger count uses the index, middle, ring, and pinky. The thumb is ignored. A pose must hold for a few frames before the selection changes. Slider values stay where they are when a channel is deselected.
 
